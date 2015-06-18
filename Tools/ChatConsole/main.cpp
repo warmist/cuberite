@@ -82,13 +82,15 @@ class LinkCallbacks : public cTCPLink::cCallbacks
 		GAME
 	} m_State;
 
-	int id;
+	std::condition_variable & m_cv;
+	cTCPLinkPtr & m_Link;
 
 public:
-	LinkCallbacks(int i) : m_State(LOGIN), id(i), recivedData(1024) {}
+	LinkCallbacks(std::condition_variable & a_cv, cTCPLinkPtr & a_Link) : m_State(LOGIN), recivedData(102400), m_cv(a_cv), m_Link(a_Link)  {}
 
 	virtual void OnLinkCreated(cTCPLinkPtr a_Link)
 	{
+		m_Link = a_Link;
 		cByteBuffer p(400);
 		// Handshake
 		p.WriteVarInt32(15);
@@ -99,9 +101,7 @@ public:
 		p.WriteVarInt32(2);
 		// Login Start
 
-		std::stringstream sstm;
-		sstm << "LoadTest" << id;
-		std::string idstring = sstm.str();
+		std::string idstring = "ConsoleChat";
 
 		cByteBuffer payload(100);
 		payload.WriteVarInt32(0x0);
@@ -115,7 +115,12 @@ public:
 	}
 	virtual void OnReceivedData(const char * a_Data, size_t a_Length)
 	{
-		recivedData.WriteBuf(a_Data, a_Length);
+		//std::cout << "recived " << a_Length << " bytes" << std::endl;
+		if (!recivedData.WriteBuf(a_Data, a_Length))
+		{
+			std::cout << "Write failed" << std::endl;
+			abort();
+		}
 		switch (m_State)
 		{
 			case LOGIN:
@@ -128,7 +133,7 @@ public:
 	}
 
 #define IGNORE_PAYLOAD recivedData.SkipRead(length - typeLength);
-
+#define CHECK_CALL(x) if (!(x)) {abort();}
 	void HandleLoginPackets()
 	{
 		for(;;) 
@@ -145,22 +150,24 @@ public:
 				break;
 			}
 			int typeLength = recivedData.GetReadableSpace();
-			assert(recivedData.ReadVarInt32(type));
+			CHECK_CALL(recivedData.ReadVarInt32(type))
 			typeLength -= recivedData.GetReadableSpace();
 			switch (type)
 			{
 				case 0x2:
 				{
-					std::cout << id << ": LoginSuccess" << std::endl;
+					std::cout << ": LoginSuccess" << std::endl;
 					IGNORE_PAYLOAD
 					recivedData.CommitRead();
 					m_State = GAME;
+					m_cv.notify_one();
 					HandleGamePackets();
+					return;
 					break;
 				}
 				default:
 				{
-					std::cout << id << ": Unknown: Ignoring: " << type << std::endl;
+					std::cout << ": Unknown: Ignoring: " << type << std::endl;
 					IGNORE_PAYLOAD
 					break;
 				}
@@ -178,32 +185,77 @@ public:
 			if (!recivedData.ReadVarInt32(length))
 			{
 				recivedData.ResetRead();
-				break;
+				return;
 			}
 			if (length == 0)
 			{
+				std::cout << "recived a zero length packet" << std::endl;
 				recivedData.ResetRead();
-				break;
+				return;
 			}
 			if (!recivedData.CanReadBytes(length))
 			{
+				//std::cout << "Do not have enough bytes, need " << length << " have " << recivedData.GetReadableSpace() << std::endl;
 				recivedData.ResetRead();
-				break;
+				return;
 			}
 			int typeLength = recivedData.GetReadableSpace();
-			assert(recivedData.ReadVarInt32(type));
+			CHECK_CALL(recivedData.ReadVarInt32(type));
 			typeLength -= recivedData.GetReadableSpace();
 			switch (type)
 			{
+				case 0x0:
+				{
+					//std::cout << "KeepAlive" << std::endl;
+					int32_t id;
+					CHECK_CALL(recivedData.ReadBEInt32(id));
+					cByteBuffer packet(100);
+					cByteBuffer payload(100);
+					payload.WriteVarInt32(0x0);
+					payload.WriteBEInt32(id);
+					packet.WriteVarInt32(payload.GetUsedSpace());
+					payload.ReadToByteBuffer(packet, payload.GetUsedSpace());
+					std::string data;
+					packet.ReadAll(data);
+					packet.CommitRead();
+					recivedData.CommitRead();
+					m_Link->Send(data);
+					break;	
+				}
 				case 0x2:
 				{
-					std::cout << id << ": Chat" << std::endl;
+					std::string message;
+					CHECK_CALL(recivedData.ReadVarUTF8String(message));
+					std::cout << "Chat: " << message << std::endl;
+					break;
+				}
+				case 0x21:
+				{
+					//std::cout << "Chunk Data: ";
+					int32_t ChunkX, ChunkZ;
+					recivedData.ReadBEInt32(ChunkX);
+					recivedData.ReadBEInt32(ChunkZ);
+					bool groundUp;
+					recivedData.ReadBool(groundUp);
+					uint16_t bitmask1;
+					recivedData.ReadBEUInt16(bitmask1);
+					uint16_t bitmask2;
+					recivedData.ReadBEUInt16(bitmask2);
+					uint32_t Size;
+					recivedData.ReadBEUInt32(Size);
+					recivedData.SkipRead(Size);
+					//std::cout << std::dec << ChunkX << ", " << ChunkZ << " groundUp: " << groundUp << std::endl;
+					break;
+				}
+				case 0x46:
+				{
+					//std::cout << "compression enabled" << std::endl;
 					IGNORE_PAYLOAD
 					break;
 				}
 				default:
 				{
-					std::cout << id << ": Unknown: Ignoring: " << type << std::endl;
+					//std::cout << "Unknown: Ignoring: " << std::hex << type << std::endl;
 					IGNORE_PAYLOAD
 					break;
 				}
@@ -214,11 +266,11 @@ public:
 
 	virtual void OnRemoteClosed(void)
 	{
-		std::cout << id << ": closed" << std::endl;
+		std::cout << "closed" << std::endl;
 	}
 	virtual void OnError(int a_ErrorCode, const AString & a_ErrorMsg)
 	{
-		std::cout << id << ": error" << std::endl;
+		std::cout << "error" << std::endl;
 	}
 
 private:
@@ -229,11 +281,28 @@ private:
 
 int main()
 {
-	for(int i = 0;i < 50000; i++)
+
+	std::cout << "Connecting" << std::endl;
+	std::mutex mut;
+	std::condition_variable cv;
+	cTCPLinkPtr Link;
+	cNetwork::Connect("localhost", 25565, std::make_shared<ConnectionCallbacks>(), std::make_shared<LinkCallbacks>(cv, Link));
+	std::unique_lock<std::mutex> lock(mut);
+	cv.wait(lock);
+	for(;;)
 	{
-		std::cout << "Creating new Player" << std::endl;
-		cNetwork::Connect("localhost", 25565, std::make_shared<ConnectionCallbacks>(), std::make_shared<LinkCallbacks>(i));
-		usleep(100000);
+		std::string message;
+		std::getline(std::cin, message);
+		cByteBuffer packet(4000);
+		// Handshake
+		cByteBuffer payload(1000);
+		payload.WriteVarInt32(0x01);
+		payload.WriteVarUTF8String(message);
+		packet.WriteVarInt32(payload.GetUsedSpace());
+		payload.ReadToByteBuffer(packet, payload.GetUsedSpace());
+		std::string data;
+		packet.ReadAll(data);
+		packet.CommitRead();
+		Link->Send(data);
 	}
-	for(;;);
 }

@@ -48,6 +48,6 @@ add_subdirectory(../../lib/libevent/ ./libevent)
 
 target_link_libraries(Network event_core event_extra)
 
-add_executable(LoadTest main.cpp)
-target_link_libraries(LoadTest Network pthread)
+add_executable(ChatConsole main.cpp)
+target_link_libraries(ChatConsole Network pthread)
 
