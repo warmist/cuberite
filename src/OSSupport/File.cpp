@@ -147,7 +147,7 @@ bool cFile::IsEOF(void) const
 
 
 
-int cFile::Read (void * iBuffer, size_t iNumBytes)
+int cFile::Read (void * a_Buffer, size_t a_NumBytes)
 {
 	ASSERT(IsOpen());
 	
@@ -156,14 +156,35 @@ int cFile::Read (void * iBuffer, size_t iNumBytes)
 		return -1;
 	}
 	
-	return (int)fread(iBuffer, 1, (size_t)iNumBytes, m_File);  // fread() returns the portion of Count parameter actually read, so we need to send iNumBytes as Count
+	return static_cast<int>(fread(a_Buffer, 1, a_NumBytes, m_File));  // fread() returns the portion of Count parameter actually read, so we need to send a_a_NumBytes as Count
 }
 
 
 
 
 
-int cFile::Write(const void * iBuffer, size_t iNumBytes)
+AString cFile::Read(size_t a_NumBytes)
+{
+	ASSERT(IsOpen());
+	
+	if (!IsOpen())
+	{
+		return AString();
+	}
+
+	// HACK: This depends on the knowledge that AString::data() returns the internal buffer, rather than a copy of it.
+	AString res;
+	res.resize(a_NumBytes);
+	auto newSize = fread(const_cast<char *>(res.data()), 1, a_NumBytes, m_File);
+	res.resize(newSize);
+	return res;
+}
+
+
+
+
+
+int cFile::Write(const void * a_Buffer, size_t a_NumBytes)
 {
 	ASSERT(IsOpen());
 	
@@ -172,7 +193,7 @@ int cFile::Write(const void * iBuffer, size_t iNumBytes)
 		return -1;
 	}
 
-	int res = (int)fwrite(iBuffer, 1, (size_t)iNumBytes, m_File);  // fwrite() returns the portion of Count parameter actually written, so we need to send iNumBytes as Count
+	int res = static_cast<int>(fwrite(a_Buffer, 1, a_NumBytes, m_File));  // fwrite() returns the portion of Count parameter actually written, so we need to send a_NumBytes as Count
 	return res;
 }
 
@@ -236,7 +257,7 @@ long cFile::GetSize(void) const
 		return -1;
 	}
 	long res = Tell();
-	if (fseek(m_File, (long)CurPos, SEEK_SET) != 0)
+	if (fseek(m_File, static_cast<long>(CurPos), SEEK_SET) != 0)
 	{
 		return -1;
 	}
@@ -272,7 +293,7 @@ int cFile::ReadRestOfFile(AString & a_Contents)
 	
 	// HACK: This depends on the internal knowledge that AString's data() function returns the internal buffer directly
 	a_Contents.assign(DataSize, '\0');
-	return Read((void *)a_Contents.data(), DataSize);
+	return Read(reinterpret_cast<void *>(const_cast<char *>(a_Contents.data())), DataSize);
 }
 
 
@@ -366,7 +387,7 @@ long cFile::GetSize(const AString & a_FileName)
 	struct stat st;
 	if (stat(a_FileName.c_str(), &st) == 0)
 	{
-		return (int)st.st_size;
+		return static_cast<int>(st.st_size);
 	}
 	return -1;
 }

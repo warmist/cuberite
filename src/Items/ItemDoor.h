@@ -32,7 +32,6 @@ public:
 		{
 			return false;
 		}
-		AddFaceDirection(a_BlockX, a_BlockY, a_BlockZ, a_BlockFace);
 
 		// Door (bottom block) can be placed in Y range of [1, 254]:
 		if ((a_BlockY < 1) || (a_BlockY >= cChunkDef::Height - 2))
@@ -50,7 +49,7 @@ public:
 		BLOCKTYPE BlockType;
 		switch (m_ItemType)
 		{
-			case E_ITEM_WOODEN_DOOR:   BlockType = E_BLOCK_WOODEN_DOOR;   break;
+			case E_ITEM_WOODEN_DOOR:   BlockType = E_BLOCK_OAK_DOOR;      break;
 			case E_ITEM_IRON_DOOR:     BlockType = E_BLOCK_IRON_DOOR;     break;
 			case E_ITEM_SPRUCE_DOOR:   BlockType = E_BLOCK_SPRUCE_DOOR;   break;
 			case E_ITEM_BIRCH_DOOR:    BlockType = E_BLOCK_BIRCH_DOOR;    break;

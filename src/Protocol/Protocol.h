@@ -59,7 +59,7 @@ public:
 
 	virtual ~cProtocol() {}
 	
-	/// Called when client sends some data
+	/** Called when client sends some data */
 	virtual void DataReceived(const char * a_Data, size_t a_Size) = 0;
 	
 	// Sending stuff to clients (alphabetically sorted):
@@ -96,12 +96,10 @@ public:
 	virtual void SendHealth                     (void) = 0;
 	virtual void SendHideTitle                  (void) = 0;
 	virtual void SendInventorySlot              (char a_WindowID, short a_SlotNum, const cItem & a_Item) = 0;
-	virtual void SendKeepAlive                  (int a_PingID) = 0;
+	virtual void SendKeepAlive                  (UInt32 a_PingID) = 0;
 	virtual void SendLogin                      (const cPlayer & a_Player, const cWorld & a_World) = 0;
 	virtual void SendLoginSuccess               (void) = 0;
-	virtual void SendMapColumn                  (int a_ID, int a_X, int a_Y, const Byte * a_Colors, unsigned int a_Length, unsigned int m_Scale) = 0;
-	virtual void SendMapDecorators              (int a_ID, const cMapDecoratorList & a_Decorators, unsigned int m_Scale) = 0;
-	virtual void SendMapInfo                    (int a_ID, unsigned int a_Scale) = 0;
+	virtual void SendMapData                    (const cMap & a_Map, int a_DataStartX, int a_DataStartY) = 0;
 	virtual void SendPaintingSpawn              (const cPainting & a_Painting) = 0;
 	virtual void SendPickupSpawn                (const cPickup & a_Pickup) = 0;
 	virtual void SendPlayerAbilities            (void) = 0;
@@ -152,7 +150,7 @@ public:
 	virtual void SendWindowOpen                 (const cWindow & a_Window) = 0;
 	virtual void SendWindowProperty             (const cWindow & a_Window, short a_Property, short a_Value) = 0;
 
-	/// Returns the ServerID used for authentication through session.minecraft.net
+	/** Returns the ServerID used for authentication through session.minecraft.net */
 	virtual AString GetAuthServerID(void) = 0;
 
 protected:

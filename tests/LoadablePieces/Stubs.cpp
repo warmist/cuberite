@@ -160,7 +160,7 @@ void cBlockHandler::OnDestroyed(cChunkInterface & a_ChunkInterface, cWorldInterf
 
 
 
-void cBlockHandler::NeighborChanged(cChunkInterface & a_ChunkInterface, int a_BlockX, int a_BlockY, int a_BlockZ)
+void cBlockHandler::NeighborChanged(cChunkInterface & a_ChunkInterface, int a_BlockX, int a_BlockY, int a_BlockZ, eBlockFace a_WhichNeighbor)
 {
 }
 
@@ -185,15 +185,6 @@ void cBlockHandler::DropBlock(cChunkInterface & a_ChunkInterface, cWorldInterfac
 
 
 bool cBlockHandler::CanBeAt(cChunkInterface & a_ChunkInterface, int a_BlockX, int a_BlockY, int a_BlockZ, const cChunk & a_Chunk)
-{
-	return true;
-}
-
-
-
-
-
-bool cBlockHandler::CanDirtGrowGrass(NIBBLETYPE a_Meta)
 {
 	return true;
 }
@@ -240,6 +231,15 @@ bool cBlockHandler::DoesDropOnUnsuitable(void)
 
 void cBlockHandler::Check(cChunkInterface & a_ChunkInterface, cBlockPluginInterface & a_PluginInterface, int a_RelX, int a_RelY, int a_RelZ, cChunk & a_Chunk)
 {
+}
+
+
+
+
+
+ColourID cBlockHandler::GetMapBaseColourID(NIBBLETYPE a_Meta)
+{
+	return 0;
 }
 
 

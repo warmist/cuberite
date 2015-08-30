@@ -23,7 +23,7 @@
 
 
 #include <array>
-
+#include <atomic>
 
 
 // fwd:
@@ -108,7 +108,7 @@ public:  // tolua_export
 	If the string given is not a valid UUID, returns false. */
 	static bool IsUUIDOnline(const AString & a_UUID);  // tolua_export
 	
-	/** Formats the type of message with the proper color and prefix for sending to the client. **/
+	/** Formats the type of message with the proper color and prefix for sending to the client. */
 	static AString FormatMessageType(bool ShouldAppendChatPrefixes, eMessageType a_ChatPrefix, const AString & a_AdditionalData);
 	
 	static AString FormatChatPrefix(bool ShouldAppendChatPrefixes, AString a_ChatPrefixS, AString m_Color1, AString m_Color2);
@@ -178,9 +178,7 @@ public:  // tolua_export
 	void SendHealth                     (void);
 	void SendHideTitle                  (void);
 	void SendInventorySlot              (char a_WindowID, short a_SlotNum, const cItem & a_Item);
-	void SendMapColumn                  (int a_ID, int a_X, int a_Y, const Byte * a_Colors, unsigned int a_Length, unsigned int m_Scale);
-	void SendMapDecorators              (int a_ID, const cMapDecoratorList & a_Decorators, unsigned int m_Scale);
-	void SendMapInfo                    (int a_ID, unsigned int a_Scale);
+	void SendMapData                    (const cMap & a_Map, int a_DataStartX, int a_DataStartY);
 	void SendPaintingSpawn              (const cPainting & a_Painting);
 	void SendParticleEffect             (const AString & a_ParticleName, float a_SrcX, float a_SrcY, float a_SrcZ, float a_OffsetX, float a_OffsetY, float a_OffsetZ, float a_ParticleData, int a_ParticleAmount);
 	void SendParticleEffect             (const AString & a_ParticleName, const Vector3f a_Src, const Vector3f a_Offset, float a_ParticleData, int a_ParticleAmount, std::array<int, 2> a_Data);
@@ -312,7 +310,7 @@ public:  // tolua_export
 	*/
 	bool HandleHandshake        (const AString & a_Username);
 	
-	void HandleKeepAlive        (int a_KeepAliveID);
+	void HandleKeepAlive        (UInt32 a_KeepAliveID);
 	void HandleLeftClick        (int a_BlockX, int a_BlockY, int a_BlockZ, eBlockFace a_BlockFace, UInt8 a_Status);
 	
 	/** Called when the protocol receives a MC|TrSel packet, indicating that the player used a trade in
@@ -323,7 +321,14 @@ public:  // tolua_export
 	void HandlePlayerAbilities  (bool a_CanFly, bool a_IsFlying, float FlyingSpeed, float WalkingSpeed);
 	void HandlePlayerLook       (float a_Rotation, float a_Pitch, bool a_IsOnGround);
 	void HandlePlayerMoveLook   (double a_PosX, double a_PosY, double a_PosZ, double a_Stance, float a_Rotation, float a_Pitch, bool a_IsOnGround);  // While m_bPositionConfirmed (normal gameplay)
-	void HandlePlayerPos        (double a_PosX, double a_PosY, double a_PosZ, double a_Stance, bool a_IsOnGround);
+
+	/** Verifies and sets player position, performing relevant checks
+	Calls relevant methods to process movement related statistics
+	Requires state of previous position and on-ground status, so must be called when these are still intact
+	*/
+	void HandlePlayerPos(double a_PosX, double a_PosY, double a_PosZ, double a_Stance, bool a_IsOnGround);
+
+
 	void HandlePluginMessage    (const AString & a_Channel, const AString & a_Message);
 	void HandleRespawn          (void);
 	void HandleRightClick       (int a_BlockX, int a_BlockY, int a_BlockZ, eBlockFace a_BlockFace, int a_CursorX, int a_CursorY, int a_CursorZ, const cItem & a_HeldItem);
@@ -343,7 +348,7 @@ public:  // tolua_export
 	/** Called when the protocol has finished logging the user in.
 	Return true to allow the user in; false to kick them.
 	*/
-	bool HandleLogin(int a_ProtocolVersion, const AString & a_Username);
+	bool HandleLogin(UInt32 a_ProtocolVersion, const AString & a_Username);
 	
 	void SendData(const char * a_Data, size_t a_Size);
 	
@@ -377,10 +382,10 @@ private:
 	AString m_Password;
 	Json::Value m_Properties;
 
-	cCriticalSection m_CSChunkLists;
-	cChunkCoordsList m_LoadedChunks;  // Chunks that the player belongs to
-	cChunkCoordsList m_ChunksToSend;  // Chunks that need to be sent to the player (queued because they weren't generated yet or there's not enough time to send them)
-	cChunkCoordsList m_SentChunks;    // Chunks that are currently sent to the client
+	cCriticalSection                                   m_CSChunkLists;
+	cChunkCoordsList                                   m_LoadedChunks;  // Chunks that the player belongs to
+	std::unordered_set<cChunkCoords, cChunkCoordsHash> m_ChunksToSend;  // Chunks that need to be sent to the player (queued because they weren't generated yet or there's not enough time to send them)
+	cChunkCoordsList                                   m_SentChunks;    // Chunks that are currently sent to the client
 
 	cProtocol * m_Protocol;
 
@@ -415,7 +420,7 @@ private:
 	std::chrono::steady_clock::duration m_Ping;
 
 	/** ID of the last ping request sent to the client. */
-	int m_PingID;
+	UInt32 m_PingID;
 
 	/** Time of the last ping request sent to the client. */
 	std::chrono::steady_clock::time_point m_PingStartTime;
@@ -447,7 +452,7 @@ private:
 		// TODO: Add Kicking here as well
 	} ;
 	
-	eState m_State;
+	std::atomic<eState> m_State;
 	
 	/** m_State needs to be locked in the Destroy() function so that the destruction code doesn't run twice on two different threads */
 	cCriticalSection m_CSDestroyingState;

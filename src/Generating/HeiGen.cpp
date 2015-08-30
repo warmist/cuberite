@@ -102,16 +102,16 @@ void cHeiGenFlat::InitializeHeightGen(cIniFile & a_IniFile)
 ////////////////////////////////////////////////////////////////////////////////
 // cHeiGenCache:
 
-cHeiGenCache::cHeiGenCache(cTerrainHeightGenPtr a_HeiGenToCache, int a_CacheSize) :
+cHeiGenCache::cHeiGenCache(cTerrainHeightGenPtr a_HeiGenToCache, size_t a_CacheSize) :
 	m_HeiGenToCache(a_HeiGenToCache),
 	m_CacheSize(a_CacheSize),
-	m_CacheOrder(new int[a_CacheSize]),
+	m_CacheOrder(new size_t[a_CacheSize]),
 	m_CacheData(new sCacheData[a_CacheSize]),
 	m_NumHits(0),
 	m_NumMisses(0),
 	m_TotalChain(0)
 {
-	for (int i = 0; i < m_CacheSize; i++)
+	for (size_t i = 0; i < m_CacheSize; i++)
 	{
 		m_CacheOrder[i] = i;
 		m_CacheData[i].m_ChunkX = 0x7fffffff;
@@ -141,11 +141,11 @@ void cHeiGenCache::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::HeightMap
 	if (((m_NumHits + m_NumMisses) % 1024) == 10)
 	{
 		LOGD("HeiGenCache: %d hits, %d misses, saved %.2f %%", m_NumHits, m_NumMisses, 100.0 * m_NumHits / (m_NumHits + m_NumMisses));
-		LOGD("HeiGenCache: Avg cache chain length: %.2f", (float)m_TotalChain / m_NumHits);
+		LOGD("HeiGenCache: Avg cache chain length: %.2f", static_cast<double>(m_TotalChain) / m_NumHits);
 	}
 	//*/
 	
-	for (int i = 0; i < m_CacheSize; i++)
+	for (size_t i = 0; i < m_CacheSize; i++)
 	{
 		if (
 			(m_CacheData[m_CacheOrder[i]].m_ChunkX != a_ChunkX) ||
@@ -155,10 +155,10 @@ void cHeiGenCache::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::HeightMap
 			continue;
 		}
 		// Found it in the cache
-		int Idx = m_CacheOrder[i];
+		auto Idx = m_CacheOrder[i];
 		
 		// Move to front:
-		for (int j = i; j > 0; j--)
+		for (size_t j = i; j > 0; j--)
 		{
 			m_CacheOrder[j] = m_CacheOrder[j - 1];
 		}
@@ -177,8 +177,8 @@ void cHeiGenCache::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::HeightMap
 	m_HeiGenToCache->GenHeightMap(a_ChunkX, a_ChunkZ, a_HeightMap);
 	
 	// Insert it as the first item in the MRU order:
-	int Idx = m_CacheOrder[m_CacheSize - 1];
-	for (int i = m_CacheSize - 1; i > 0; i--)
+	auto Idx = m_CacheOrder[m_CacheSize - 1];
+	for (auto i = m_CacheSize - 1; i > 0; i--)
 	{
 		m_CacheOrder[i] = m_CacheOrder[i - 1];
 	}  // for i - m_CacheOrder[]
@@ -194,7 +194,7 @@ void cHeiGenCache::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::HeightMap
 
 bool cHeiGenCache::GetHeightAt(int a_ChunkX, int a_ChunkZ, int a_RelX, int a_RelZ, HEIGHTTYPE & a_Height)
 {
-	for (int i = 0; i < m_CacheSize; i++)
+	for (size_t i = 0; i < m_CacheSize; i++)
 	{
 		if ((m_CacheData[i].m_ChunkX == a_ChunkX) && (m_CacheData[i].m_ChunkZ == a_ChunkZ))
 		{
@@ -230,7 +230,7 @@ cHeiGenMultiCache::cHeiGenMultiCache(cTerrainHeightGenPtr a_HeiGenToCache, size_
 void cHeiGenMultiCache::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::HeightMap & a_HeightMap)
 {
 	// Get the subcache responsible for this chunk:
-	const size_t cacheIdx = ((size_t)a_ChunkX + m_CoeffZ * (size_t)a_ChunkZ) % m_NumSubCaches;
+	const size_t cacheIdx = (static_cast<size_t>(a_ChunkX) + m_CoeffZ * static_cast<size_t>(a_ChunkZ)) % m_NumSubCaches;
 
 	// Ask the subcache:
 	m_SubCaches[cacheIdx]->GenHeightMap(a_ChunkX, a_ChunkZ, a_HeightMap);
@@ -243,7 +243,7 @@ void cHeiGenMultiCache::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::Heig
 bool cHeiGenMultiCache::GetHeightAt(int a_ChunkX, int a_ChunkZ, int a_RelX, int a_RelZ, HEIGHTTYPE & a_Height)
 {
 	// Get the subcache responsible for this chunk:
-	const size_t cacheIdx = ((size_t)a_ChunkX + m_CoeffZ * (size_t)a_ChunkZ) % m_NumSubCaches;
+	const size_t cacheIdx = (static_cast<size_t>(a_ChunkX) + m_CoeffZ * static_cast<size_t>(a_ChunkZ)) % m_NumSubCaches;
 
 	// Ask the subcache:
 	return m_SubCaches[cacheIdx]->GetHeightAt(a_ChunkX, a_ChunkZ, a_RelX, a_RelZ, a_Height);
@@ -295,10 +295,10 @@ void cHeiGenClassic::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::HeightM
 {
 	for (int z = 0; z < cChunkDef::Width; z++)
 	{
-		const float zz = (float)(a_ChunkZ * cChunkDef::Width + z);
+		const float zz = static_cast<float>(a_ChunkZ * cChunkDef::Width + z);
 		for (int x = 0; x < cChunkDef::Width; x++)
 		{
-			const float xx = (float)(a_ChunkX * cChunkDef::Width + x);
+			const float xx = static_cast<float>(a_ChunkX * cChunkDef::Width + x);
 			
 			HEIGHTTYPE hei = static_cast<HEIGHTTYPE>(Clamp(static_cast<int>(64 + (GetNoise(xx * 0.05f, zz * 0.05f) * 16)), 10, 250));
 			cChunkDef::SetHeight(a_HeightMap, x, z, hei);
@@ -312,12 +312,12 @@ void cHeiGenClassic::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::HeightM
 
 void cHeiGenClassic::InitializeHeightGen(cIniFile & a_IniFile)
 {
-	m_HeightFreq1 = (float)a_IniFile.GetValueSetF("Generator", "ClassicHeightFreq1", 0.1);
-	m_HeightFreq2 = (float)a_IniFile.GetValueSetF("Generator", "ClassicHeightFreq2", 1.0);
-	m_HeightFreq3 = (float)a_IniFile.GetValueSetF("Generator", "ClassicHeightFreq3", 2.0);
-	m_HeightAmp1  = (float)a_IniFile.GetValueSetF("Generator", "ClassicHeightAmp1",  1.0);
-	m_HeightAmp2  = (float)a_IniFile.GetValueSetF("Generator", "ClassicHeightAmp2",  0.5);
-	m_HeightAmp3  = (float)a_IniFile.GetValueSetF("Generator", "ClassicHeightAmp3",  0.5);
+	m_HeightFreq1 = static_cast<float>(a_IniFile.GetValueSetF("Generator", "ClassicHeightFreq1", 0.1));
+	m_HeightFreq2 = static_cast<float>(a_IniFile.GetValueSetF("Generator", "ClassicHeightFreq2", 1.0));
+	m_HeightFreq3 = static_cast<float>(a_IniFile.GetValueSetF("Generator", "ClassicHeightFreq3", 2.0));
+	m_HeightAmp1  = static_cast<float>(a_IniFile.GetValueSetF("Generator", "ClassicHeightAmp1",  1.0));
+	m_HeightAmp2  = static_cast<float>(a_IniFile.GetValueSetF("Generator", "ClassicHeightAmp2",  0.5));
+	m_HeightAmp3  = static_cast<float>(a_IniFile.GetValueSetF("Generator", "ClassicHeightAmp3",  0.5));
 }
 
 
@@ -341,10 +341,10 @@ cHeiGenMountains::cHeiGenMountains(int a_Seed) :
 
 void cHeiGenMountains::GenHeightMap(int a_ChunkX, int a_ChunkZ, cChunkDef::HeightMap & a_HeightMap)
 {
-	NOISE_DATATYPE StartX = (NOISE_DATATYPE)(a_ChunkX * cChunkDef::Width);
-	NOISE_DATATYPE EndX   = (NOISE_DATATYPE)(a_ChunkX * cChunkDef::Width + cChunkDef::Width - 1);
-	NOISE_DATATYPE StartZ = (NOISE_DATATYPE)(a_ChunkZ * cChunkDef::Width);
-	NOISE_DATATYPE EndZ   = (NOISE_DATATYPE)(a_ChunkZ * cChunkDef::Width + cChunkDef::Width - 1);
+	NOISE_DATATYPE StartX = static_cast<NOISE_DATATYPE>(a_ChunkX * cChunkDef::Width);
+	NOISE_DATATYPE EndX   = static_cast<NOISE_DATATYPE>(a_ChunkX * cChunkDef::Width + cChunkDef::Width - 1);
+	NOISE_DATATYPE StartZ = static_cast<NOISE_DATATYPE>(a_ChunkZ * cChunkDef::Width);
+	NOISE_DATATYPE EndZ   = static_cast<NOISE_DATATYPE>(a_ChunkZ * cChunkDef::Width + cChunkDef::Width - 1);
 	NOISE_DATATYPE Workspace[16 * 16];
 	NOISE_DATATYPE MountainNoise[16 * 16];
 	NOISE_DATATYPE DitchNoise[16 * 16];
@@ -390,7 +390,7 @@ void cHeiGenMountains::InitializeHeightGen(cIniFile & a_IniFile)
 
 const cHeiGenBiomal::sGenParam cHeiGenBiomal::m_GenParam[256] =
 {
-	/*                        Fast-changing | Middle-changing | Slow-changing |*/
+	/*                        Fast-changing | Middle-changing | Slow-changing | */
 	/* Biome               |  Freq1  | Amp1 | Freq2   | Amp2  | Freq3  | Amp3 | BaseHeight */
 	/* biOcean               */ { 0.1f,   2.0f,  0.05f,    10.0f,  0.01f,    8.0f,  50},
 	/* biPlains              */ { 0.1f,   1.0f,  0.05f,     1.5f,  0.01f,    4.0f,  68},
@@ -603,7 +603,7 @@ NOISE_DATATYPE cHeiGenBiomal::GetHeightAt(int a_RelX, int a_RelZ, int a_ChunkX, 
 			Height += BiomeCounts[i] * (m_GenParam[i].m_BaseHeight + oct1 + oct2 + oct3);
 		}
 		NOISE_DATATYPE res = Height / Sum;
-		return std::min((NOISE_DATATYPE)250, std::max(res, (NOISE_DATATYPE)5));
+		return std::min(static_cast<NOISE_DATATYPE>(250), std::max(res, static_cast<NOISE_DATATYPE>(5)));
 	}
 	
 	// No known biome around? Weird. Return a bogus value:

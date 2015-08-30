@@ -73,7 +73,6 @@ public:
 	void BroadcastBlockAction(int a_BlockX, int a_BlockY, int a_BlockZ, char a_Byte1, char a_Byte2, BLOCKTYPE a_BlockType, const cClientHandle * a_Exclude = nullptr);
 	void BroadcastBlockBreakAnimation(UInt32 a_EntityID, int a_BlockX, int a_BlockY, int a_BlockZ, char a_Stage, const cClientHandle * a_Exclude = nullptr);
 	void BroadcastBlockEntity(int a_BlockX, int a_BlockY, int a_BlockZ, const cClientHandle * a_Exclude);
-	void BroadcastChunkData(int a_ChunkX, int a_ChunkZ, cChunkDataSerializer & a_Serializer, const cClientHandle * a_Exclude = nullptr);
 	void BroadcastCollectEntity(const cEntity & a_Entity, const cPlayer & a_Player, const cClientHandle * a_Exclude = nullptr);
 	void BroadcastCollectPickup(const cPickup & a_Pickup, const cPlayer & a_Player, const cClientHandle * a_Exclude = nullptr);
 	void BroadcastDestroyEntity(const cEntity & a_Entity, const cClientHandle * a_Exclude = nullptr);
@@ -104,7 +103,7 @@ public:
 	/** Calls the callback for the chunk specified, with ChunkMapCS locked; returns false if the chunk doesn't exist, otherwise returns the same value as the callback */
 	bool DoWithChunk(int a_ChunkX, int a_ChunkZ, cChunkCallback & a_Callback);
 
-	/** Calls the callback for the chunk at the block position specified, with ChunkMapCS locked; returns false if the chunk doesn't exist, otherwise returns the same value as the callback **/
+	/** Calls the callback for the chunk at the block position specified, with ChunkMapCS locked; returns false if the chunk doesn't exist, otherwise returns the same value as the callback */
 	bool DoWithChunkAt(Vector3i a_BlockPos, std::function<bool(cChunk &)> a_Callback);
 
 	/** Wakes up simulators for the specified block */
@@ -509,7 +508,7 @@ private:
 	/** The cChunkStay descendants that are currently enabled in this chunkmap */
 	cChunkStays m_ChunkStays;
 
-	std::auto_ptr<cAllocationPool<cChunkData::sChunkSection> > m_Pool;
+	std::unique_ptr<cAllocationPool<cChunkData::sChunkSection> > m_Pool;
 
 	cChunkPtr GetChunk      (int a_ChunkX, int a_ChunkZ);  // Also queues the chunk for loading / generating if not valid
 	cChunkPtr GetChunkNoGen (int a_ChunkX, int a_ChunkZ);  // Also queues the chunk for loading if not valid; doesn't generate

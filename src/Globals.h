@@ -143,6 +143,7 @@ typedef unsigned short     UInt16;
 typedef unsigned char      UInt8;
 
 typedef unsigned char Byte;
+typedef Byte ColourID;
 
 
 // If you get an error about specialization check the size of integral types
@@ -245,6 +246,7 @@ template class SizeChecker<UInt8,  1>;
 
 
 // STL stuff:
+#include <array>
 #include <chrono>
 #include <vector>
 #include <list>
@@ -327,15 +329,15 @@ void inline LOG(const char * a_Format, ...)
 
 // Common definitions:
 
-/// Evaluates to the number of elements in an array (compile-time!)
+/** Evaluates to the number of elements in an array (compile-time!) */
 #define ARRAYCOUNT(X) (sizeof(X) / sizeof(*(X)))
 
-/// Allows arithmetic expressions like "32 KiB" (but consider using parenthesis around it, "(32 KiB)")
+/** Allows arithmetic expressions like "32 KiB" (but consider using parenthesis around it, "(32 KiB)") */
 #define KiB * 1024
 #define MiB * 1024 * 1024
 
-/// Faster than (int)floorf((float)x / (float)div)
-#define FAST_FLOOR_DIV( x, div) (((x) - (((x) < 0) ? ((div) - 1) : 0)) / (div))
+/** Faster than (int)floorf((float)x / (float)div) */
+#define FAST_FLOOR_DIV(x, div) (((x) - (((x) < 0) ? ((div) - 1) : 0)) / (div))
 
 // Own version of assert() that writes failed assertions to the log for review
 #ifdef TEST_GLOBALS

@@ -72,14 +72,11 @@ public:
 		double a_BoundingBoxWidth, double a_BoundingBoxHeight,
 		int a_MaxUp = 1, int a_MaxDown = 1
 	);
-
-	/** Destroys the path and frees its memory. */
-	~cPath();
-
+	
 	/** Performs part of the path calculation and returns the appropriate status.
 	If NEARBY_FOUND is returned, it means that the destination is not reachable, but a nearby destination
 	is reachable. If the user likes the alternative destination, they can call AcceptNearbyPath to treat the path as found,
-	and to make consequent calls to step return PATH_FOUND*/
+	and to make consequent calls to step return PATH_FOUND */
 	ePathFinderStatus Step(cChunk & a_Chunk);
 
 	/** Called after the PathFinder's step returns NEARBY_FOUND.
@@ -87,7 +84,8 @@ public:
 	the PathFinder found a path to. */
 	Vector3i AcceptNearbyPath();
 
-	/* Point retrieval functions, inlined for performance. */
+	// Point retrieval functions, inlined for performance:
+
 	/** Returns the next point in the path. */
 	inline Vector3d GetNextPoint()
 	{
@@ -95,40 +93,30 @@ public:
 		Vector3i Point = m_PathPoints[m_PathPoints.size() - 1 - (++m_CurrentPoint)];
 		return Vector3d(Point.x + m_HalfWidth, Point.y, Point.z + m_HalfWidth);
 	}
+
+
 	/** Checks whether this is the last point or not. Never call getnextPoint when this is true. */
-	inline bool IsLastPoint()
+	inline bool IsLastPoint() const
 	{
 		ASSERT(m_Status == ePathFinderStatus::PATH_FOUND);
 		return (m_CurrentPoint == m_PathPoints.size() - 1);
 	}
-	inline bool IsFirstPoint()
+
+	inline bool IsFirstPoint() const
 	{
 		ASSERT(m_Status == ePathFinderStatus::PATH_FOUND);
 		return (m_CurrentPoint == 0);
 	}
-	/** Get the point at a_index. Remark: Internally, the indexes are reversed. */
-	inline Vector3d GetPoint(size_t a_index)
-	{
-		ASSERT(m_Status == ePathFinderStatus::PATH_FOUND);
-		ASSERT(a_index < m_PathPoints.size());
-		Vector3i Point = m_PathPoints[m_PathPoints.size() - 1 - a_index];
-		return Vector3d(Point.x + m_HalfWidth, Point.y, Point.z + m_HalfWidth);
-	}
-	/** Returns the total number of points this path has. */
-	inline size_t GetPointCount()
-	{
-		if (m_Status != ePathFinderStatus::PATH_FOUND)
-		{
-			return 0;
-		}
-		return m_PathPoints.size();
-	}
+
+
+
+
 
 private:
 
 	/* General */
 	bool IsSolid(const Vector3i & a_Location);  // Query our hosting world and ask it if there's a solid at a_location.
-	bool Step_Internal();  // The public version just calls this version * CALCULATIONS_PER_CALL times.
+	bool StepOnce();  // The public version just calls this version * CALCULATIONS_PER_CALL times.
 	void FinishCalculation();  // Clears the memory used for calculating the path.
 	void FinishCalculation(ePathFinderStatus a_NewStatus);  // Clears the memory used for calculating the path and changes the status.
 	void AttemptToFindAlternative();

@@ -92,12 +92,12 @@ void cNBTChunkSerializer::Finish(void)
 void cNBTChunkSerializer::AddItem(const cItem & a_Item, int a_Slot, const AString & a_CompoundName)
 {
 	m_Writer.BeginCompound(a_CompoundName);
-	m_Writer.AddShort("id",         (short)(a_Item.m_ItemType));
-	m_Writer.AddShort("Damage",     a_Item.m_ItemDamage);
-	m_Writer.AddByte ("Count",      a_Item.m_ItemCount);
+	m_Writer.AddShort("id",         static_cast<Int16>(a_Item.m_ItemType));
+	m_Writer.AddShort("Damage",     static_cast<Int16>((a_Item.m_ItemDamage)));
+	m_Writer.AddByte ("Count",      static_cast<Byte>(a_Item.m_ItemCount));
 	if (a_Slot >= 0)
 	{
-		m_Writer.AddByte ("Slot", (unsigned char)a_Slot);
+		m_Writer.AddByte ("Slot", static_cast<unsigned char>(a_Slot));
 	}
 	
 	// Write the tag compound (for enchantment, firework, custom name and repair cost):
@@ -131,7 +131,7 @@ void cNBTChunkSerializer::AddItem(const cItem & a_Item, int a_Slot, const AStrin
 
 			if ((a_Item.m_ItemType == E_ITEM_FIREWORK_ROCKET) || (a_Item.m_ItemType == E_ITEM_FIREWORK_STAR))
 			{
-				cFireworkItem::WriteToNBTCompound(a_Item.m_FireworkItem, m_Writer, (ENUM_ITEM_ID)a_Item.m_ItemType);
+				cFireworkItem::WriteToNBTCompound(a_Item.m_FireworkItem, m_Writer, static_cast<ENUM_ITEM_ID>(a_Item.m_ItemType));
 			}
 
 			if (!a_Item.m_Enchantments.IsEmpty())
@@ -184,8 +184,8 @@ void cNBTChunkSerializer::AddBeaconEntity(cBeaconEntity * a_Entity)
 	m_Writer.BeginCompound("");
 		AddBasicTileEntity(a_Entity, "Beacon");
 		m_Writer.AddInt("Levels", a_Entity->GetBeaconLevel());
-		m_Writer.AddInt("Primary", (int)a_Entity->GetPrimaryEffect());
-		m_Writer.AddInt("Secondary", (int)a_Entity->GetSecondaryEffect());
+		m_Writer.AddInt("Primary", static_cast<int>(a_Entity->GetPrimaryEffect()));
+		m_Writer.AddInt("Secondary", static_cast<int>(a_Entity->GetSecondaryEffect()));
 		m_Writer.BeginList("Items", TAG_Compound);
 			AddItemGrid(a_Entity->GetContents());
 		m_Writer.EndList();
@@ -245,8 +245,8 @@ void cNBTChunkSerializer::AddFurnaceEntity(cFurnaceEntity * a_Furnace)
 		m_Writer.BeginList("Items", TAG_Compound);
 			AddItemGrid(a_Furnace->GetContents());
 		m_Writer.EndList();
-		m_Writer.AddShort("BurnTime", a_Furnace->GetFuelBurnTimeLeft());
-		m_Writer.AddShort("CookTime", a_Furnace->GetTimeCooked());
+		m_Writer.AddShort("BurnTime", static_cast<Int16>(a_Furnace->GetFuelBurnTimeLeft()));
+		m_Writer.AddShort("CookTime", static_cast<Int16>(a_Furnace->GetTimeCooked()));
 	m_Writer.EndCompound();
 }
 
@@ -298,7 +298,7 @@ void cNBTChunkSerializer::AddNoteEntity(cNoteEntity * a_Note)
 {
 	m_Writer.BeginCompound("");
 		AddBasicTileEntity(a_Note, "Music");
-		m_Writer.AddByte("note", a_Note->GetPitch());
+		m_Writer.AddByte("note", static_cast<Byte>(a_Note->GetPitch()));
 	m_Writer.EndCompound();
 }
 
@@ -354,8 +354,8 @@ void cNBTChunkSerializer::AddFlowerPotEntity(cFlowerPotEntity * a_FlowerPot)
 {
 	m_Writer.BeginCompound("");
 		AddBasicTileEntity(a_FlowerPot, "FlowerPot");
-		m_Writer.AddInt   ("Item", (Int32) a_FlowerPot->GetItem().m_ItemType);
-		m_Writer.AddInt   ("Data", (Int32) a_FlowerPot->GetItem().m_ItemDamage);
+		m_Writer.AddInt   ("Item", static_cast<Int32>(a_FlowerPot->GetItem().m_ItemType));
+		m_Writer.AddInt   ("Data", static_cast<Int32>(a_FlowerPot->GetItem().m_ItemDamage));
 	m_Writer.EndCompound();
 }
 
@@ -380,7 +380,7 @@ void cNBTChunkSerializer::AddBasicEntity(cEntity * a_Entity, const AString & a_C
 		m_Writer.AddDouble("", a_Entity->GetYaw());
 		m_Writer.AddDouble("", a_Entity->GetPitch());
 	m_Writer.EndList();
-	m_Writer.AddShort("Health", a_Entity->GetHealth());
+	m_Writer.AddShort("Health", static_cast<Int16>(a_Entity->GetHealth()));
 }
 
 
@@ -435,7 +435,7 @@ void cNBTChunkSerializer::AddMinecartEntity(cMinecart * a_Minecart)
 			{
 				AddBasicEntity(a_Minecart, "MinecartChest");
 				// Add chest contents into the Items tag:
-				AddMinecartChestContents((cMinecartWithChest *)a_Minecart);
+				AddMinecartChestContents(reinterpret_cast<cMinecartWithChest *>(a_Minecart));
 				break;
 			}
 			case cMinecart::mpFurnace:
@@ -521,93 +521,125 @@ void cNBTChunkSerializer::AddMonsterEntity(cMonster * a_Monster)
 			m_Writer.AddFloat("", a_Monster->GetDropChanceLeggings());
 			m_Writer.AddFloat("", a_Monster->GetDropChanceBoots());
 		m_Writer.EndList();
-		m_Writer.AddByte("CanPickUpLoot", (char)a_Monster->CanPickUpLoot());
+		m_Writer.AddByte("CanPickUpLoot", (a_Monster->CanPickUpLoot())? 1 : 0);
 		m_Writer.AddString("CustomName", a_Monster->GetCustomName());
-		m_Writer.AddByte("CustomNameVisible", (char)a_Monster->IsCustomNameAlwaysVisible());
+		m_Writer.AddByte("CustomNameVisible", static_cast<Byte>(a_Monster->IsCustomNameAlwaysVisible()));
 		switch (a_Monster->GetMobType())
 		{
 			case mtBat:
 			{
-				m_Writer.AddByte("BatFlags", ((const cBat *)a_Monster)->IsHanging());
+				m_Writer.AddByte("BatFlags", reinterpret_cast<const cBat *>(a_Monster)->IsHanging());
 				break;
 			}
 			case mtCreeper:
 			{
-				m_Writer.AddByte("powered", ((const cCreeper *)a_Monster)->IsCharged());
-				m_Writer.AddByte("ignited", ((const cCreeper *)a_Monster)->IsBlowing());
+				const cCreeper *Creeper = reinterpret_cast<const cCreeper *>(a_Monster);
+				m_Writer.AddByte("powered", Creeper->IsCharged());
+				m_Writer.AddByte("ignited", Creeper->IsBlowing());
 				break;
 			}
 			case mtEnderman:
 			{
-				m_Writer.AddShort("carried",     (Int16)((const cEnderman *)a_Monster)->GetCarriedBlock());
-				m_Writer.AddShort("carriedData", (Int16)((const cEnderman *)a_Monster)->GetCarriedMeta());
+				const cEnderman *Enderman = reinterpret_cast<const cEnderman *>(a_Monster);
+				m_Writer.AddShort("carried",     static_cast<Int16>(Enderman->GetCarriedBlock()));
+				m_Writer.AddShort("carriedData", static_cast<Int16>(Enderman->GetCarriedMeta()));
 				break;
 			}
 			case mtHorse:
 			{
-				const cHorse & Horse = *((const cHorse *)a_Monster);
-				m_Writer.AddByte("ChestedHorse",   Horse.IsChested());
-				m_Writer.AddByte("EatingHaystack", Horse.IsEating());
-				m_Writer.AddByte("Tame",           Horse.IsTame());
-				m_Writer.AddInt ("Type",           Horse.GetHorseType());
-				m_Writer.AddInt ("Color",          Horse.GetHorseColor());
-				m_Writer.AddInt ("Style",          Horse.GetHorseStyle());
-				m_Writer.AddInt ("ArmorType",      Horse.GetHorseArmour());
-				m_Writer.AddByte("Saddle",         Horse.IsSaddled());
+				const cHorse *Horse = reinterpret_cast<const cHorse *>(a_Monster);
+				m_Writer.AddByte("ChestedHorse",   Horse->IsChested()? 1 : 0);
+				m_Writer.AddByte("EatingHaystack", Horse->IsEating()? 1 : 0);
+				m_Writer.AddByte("Tame",           Horse->IsTame()? 1: 0);
+				m_Writer.AddInt ("Type",           Horse->GetHorseType());
+				m_Writer.AddInt ("Color",          Horse->GetHorseColor());
+				m_Writer.AddInt ("Style",          Horse->GetHorseStyle());
+				m_Writer.AddInt ("ArmorType",      Horse->GetHorseArmour());
+				m_Writer.AddByte("Saddle",         Horse->IsSaddled()? 1 : 0);
+				m_Writer.AddByte("Age",            static_cast<Byte>(Horse->GetAge()));
 				break;
 			}
 			case mtMagmaCube:
 			{
-				m_Writer.AddInt("Size", ((const cMagmaCube *)a_Monster)->GetSize());
+				m_Writer.AddInt("Size", reinterpret_cast<const cMagmaCube *>(a_Monster)->GetSize());
 				break;
 			}
 			case mtSheep:
 			{
-				m_Writer.AddByte("Sheared", ((const cSheep *)a_Monster)->IsSheared());
-				m_Writer.AddByte("Color",   ((const cSheep *)a_Monster)->GetFurColor());
+				const cSheep *Sheep = reinterpret_cast<const cSheep *>(a_Monster);
+				m_Writer.AddByte("Sheared", Sheep->IsSheared()? 1 : 0);
+				m_Writer.AddByte("Color",   static_cast<Byte>(Sheep->GetFurColor()));
+				m_Writer.AddByte("Age",     static_cast<Byte>(Sheep->GetAge()));
 				break;
 			}
 			case mtSlime:
 			{
-				m_Writer.AddInt("Size", ((const cSlime *)a_Monster)->GetSize());
+				m_Writer.AddInt("Size", reinterpret_cast<const cSlime *>(a_Monster)->GetSize());
 				break;
 			}
 			case mtSkeleton:
 			{
-				m_Writer.AddByte("SkeletonType", (((const cSkeleton *)a_Monster)->IsWither() ? 1 : 0));
+				m_Writer.AddByte("SkeletonType", (reinterpret_cast<const cSkeleton *>(a_Monster)->IsWither() ? 1 : 0));
 				break;
 			}
 			case mtVillager:
 			{
-				m_Writer.AddInt("Profession", ((const cVillager *)a_Monster)->GetVilType());
+				const cVillager *Villager = reinterpret_cast<const cVillager *>(a_Monster);
+				m_Writer.AddInt("Profession", Villager->GetVilType());
+				m_Writer.AddByte("Age",       static_cast<Byte>(Villager->GetAge()));
 				break;
 			}
 			case mtWither:
 			{
-				m_Writer.AddInt("Invul", ((const cWither *)a_Monster)->GetWitherInvulnerableTicks());
+				m_Writer.AddInt("Invul", static_cast<Int32>(reinterpret_cast<const cWither *>(a_Monster)->GetWitherInvulnerableTicks()));
 				break;
 			}
 			case mtWolf:
 			{
-				const cWolf & Wolf = *((cWolf *)a_Monster);
-				if (!Wolf.GetOwnerName().empty())
+				const cWolf *Wolf = reinterpret_cast<const cWolf *>(a_Monster);
+				if (!Wolf->GetOwnerName().empty())
 				{
-					m_Writer.AddString("Owner", Wolf.GetOwnerName());
+					m_Writer.AddString("Owner", Wolf->GetOwnerName());
 				}
-				if (!Wolf.GetOwnerUUID().empty())
+				if (!Wolf->GetOwnerUUID().empty())
 				{
-					m_Writer.AddString("OwnerUUID", Wolf.GetOwnerUUID());
+					m_Writer.AddString("OwnerUUID", Wolf->GetOwnerUUID());
 				}
-				m_Writer.AddByte("Sitting",     Wolf.IsSitting() ? 1 : 0);
-				m_Writer.AddByte("Angry",       Wolf.IsAngry() ? 1 : 0);
-				m_Writer.AddByte("CollarColor", (unsigned char)Wolf.GetCollarColor());
+				m_Writer.AddByte("Sitting",     Wolf->IsSitting() ? 1 : 0);
+				m_Writer.AddByte("Angry",       Wolf->IsAngry() ? 1 : 0);
+				m_Writer.AddByte("CollarColor", static_cast<Byte>(Wolf->GetCollarColor()));
+				m_Writer.AddByte("Age",         static_cast<Byte>(Wolf->GetAge()));
 				break;
 			}
 			case mtZombie:
 			{
-				m_Writer.AddByte("IsVillager",   (((const cZombie *)a_Monster)->IsVillagerZombie() ? 1 : 0));
-				m_Writer.AddByte("IsBaby",       (((const cZombie *)a_Monster)->IsBaby() ? 1 : 0));
-				m_Writer.AddByte("IsConverting", (((const cZombie *)a_Monster)->IsConverting() ? 1 : 0));
+				const cZombie *Zombie = reinterpret_cast<const cZombie *>(a_Monster);
+				m_Writer.AddByte("IsVillager",   Zombie->IsVillagerZombie() ? 1 : 0);
+				m_Writer.AddByte("IsConverting", Zombie->IsConverting() ? 1 : 0);
+				m_Writer.AddByte("Age",          static_cast<Byte>(Zombie->GetAge()));
+				break;
+			}
+			case mtZombiePigman:
+			{
+				m_Writer.AddByte("Age", static_cast<Byte>(reinterpret_cast<const cZombiePigman *>(a_Monster)->GetAge()));
+				break;
+			}
+			case mtOcelot:
+			{
+				m_Writer.AddByte("Age", static_cast<Byte>(reinterpret_cast<const cOcelot *>(a_Monster)->GetAge()));
+				break;
+			}
+			case mtPig:
+			{
+				m_Writer.AddByte("Age", static_cast<Byte>(reinterpret_cast<const cPig *>(a_Monster)->GetAge()));
+				break;
+			}
+			case mtRabbit:
+			{
+				const cRabbit *Rabbit = reinterpret_cast<const cRabbit *>(a_Monster);
+				m_Writer.AddInt("RabbitType", Rabbit->GetRabbitTypeAsNumber());
+				m_Writer.AddInt("MoreCarrotTicks", Rabbit->GetMoreCarrotTicks());
+				m_Writer.AddByte("Age", static_cast<Byte>(Rabbit->GetAge()));
 				break;
 			}
 			case mtInvalidType:
@@ -621,15 +653,11 @@ void cNBTChunkSerializer::AddMonsterEntity(cMonster * a_Monster)
 			case mtGuardian:
 			case mtIronGolem:
 			case mtMooshroom:
-			case mtOcelot:
-			case mtPig:
-			case mtRabbit:
 			case mtSilverfish:
 			case mtSnowGolem:
 			case mtSpider:
 			case mtSquid:
 			case mtWitch:
-			case mtZombiePigman:
 			{
 				// Other mobs have no special tags.
 				break;
@@ -647,7 +675,7 @@ void cNBTChunkSerializer::AddPickupEntity(cPickup * a_Pickup)
 	m_Writer.BeginCompound("");
 		AddBasicEntity(a_Pickup, "Item");
 		AddItem(a_Pickup->GetItem(), -1, "Item");
-		m_Writer.AddShort("Age",    (Int16)a_Pickup->GetAge());
+		m_Writer.AddShort("Age",    static_cast<Int16>(a_Pickup->GetAge()));
 	m_Writer.EndCompound();
 }
 
@@ -665,21 +693,21 @@ void cNBTChunkSerializer::AddProjectileEntity(cProjectileEntity * a_Projectile)
 		{
 			case cProjectileEntity::pkArrow:
 			{
-				cArrowEntity * Arrow = (cArrowEntity *)a_Projectile;
+				cArrowEntity * Arrow = reinterpret_cast<cArrowEntity *>(a_Projectile);
 
-				m_Writer.AddShort("xTile", (Int16)Arrow->GetBlockHit().x);
-				m_Writer.AddShort("yTile", (Int16)Arrow->GetBlockHit().y);
-				m_Writer.AddShort("zTile", (Int16)Arrow->GetBlockHit().z);
+				m_Writer.AddShort("xTile", static_cast<Int16>(Arrow->GetBlockHit().x));
+				m_Writer.AddShort("yTile", static_cast<Int16>(Arrow->GetBlockHit().y));
+				m_Writer.AddShort("zTile", static_cast<Int16>(Arrow->GetBlockHit().z));
 				m_Writer.AddByte("pickup",   Arrow->GetPickupState());
 				m_Writer.AddDouble("damage", Arrow->GetDamageCoeff());
 				break;
 			}
 			case cProjectileEntity::pkSplashPotion:
 			{
-				cSplashPotionEntity * Potion = (cSplashPotionEntity *)a_Projectile;
+				cSplashPotionEntity * Potion = reinterpret_cast<cSplashPotionEntity *>(a_Projectile);
 				
-				m_Writer.AddInt("EffectType",               (Int16)Potion->GetEntityEffectType());
-				m_Writer.AddInt("EffectDuration",           (Int16)Potion->GetEntityEffect().GetDuration());
+				m_Writer.AddInt("EffectType",                static_cast<Int16>(Potion->GetEntityEffectType()));
+				m_Writer.AddInt("EffectDuration",            static_cast<Int16>(Potion->GetEntityEffect().GetDuration()));
 				m_Writer.AddShort("EffectIntensity",         Potion->GetEntityEffect().GetIntensity());
 				m_Writer.AddDouble("EffectDistanceModifier", Potion->GetEntityEffect().GetDistanceModifier());
 				m_Writer.AddInt("PotionName",                Potion->GetPotionColor());
@@ -729,7 +757,7 @@ void cNBTChunkSerializer::AddTNTEntity(cTNTEntity * a_TNT)
 {
 	m_Writer.BeginCompound("");
 		AddBasicEntity(a_TNT, "PrimedTnt");
-		m_Writer.AddByte("Fuse", (unsigned char)a_TNT->GetFuseTicks());
+		m_Writer.AddByte("Fuse", static_cast<unsigned char>(a_TNT->GetFuseTicks()));
 	m_Writer.EndCompound();
 }
 
@@ -741,8 +769,8 @@ void cNBTChunkSerializer::AddExpOrbEntity(cExpOrb * a_ExpOrb)
 {
 	m_Writer.BeginCompound("");
 		AddBasicEntity(a_ExpOrb, "XPOrb");
-		m_Writer.AddShort("Age", (Int16)a_ExpOrb->GetAge());
-		m_Writer.AddShort("Value", (Int16)a_ExpOrb->GetReward());
+		m_Writer.AddShort("Age", static_cast<Int16>(a_ExpOrb->GetAge()));
+		m_Writer.AddShort("Value", static_cast<Int16>(a_ExpOrb->GetReward()));
 	m_Writer.EndCompound();
 }
 
@@ -756,7 +784,7 @@ void cNBTChunkSerializer::AddItemFrameEntity(cItemFrame * a_ItemFrame)
 		AddBasicEntity(a_ItemFrame, "ItemFrame");
 		AddHangingEntity(a_ItemFrame);
 		AddItem(a_ItemFrame->GetItem(), -1, "Item");
-		m_Writer.AddByte("ItemRotation", (unsigned char)a_ItemFrame->GetItemRotation());
+		m_Writer.AddByte("ItemRotation", static_cast<Byte>(a_ItemFrame->GetItemRotation()));
 		m_Writer.AddFloat("ItemDropChance", 1.0F);
 	m_Writer.EndCompound();
 }
@@ -830,7 +858,7 @@ void cNBTChunkSerializer::BiomeData(const cChunkDef::BiomeMap * a_BiomeMap)
 		if ((*a_BiomeMap)[i] < 255)
 		{
 			// Normal MC biome, copy as-is:
-			m_VanillaBiomes[i] = (unsigned char)((*a_BiomeMap)[i]);
+			m_VanillaBiomes[i] = static_cast<Byte>((*a_BiomeMap)[i]);
 		}
 		else
 		{
@@ -866,17 +894,17 @@ void cNBTChunkSerializer::Entity(cEntity * a_Entity)
 	
 	switch (a_Entity->GetEntityType())
 	{
-		case cEntity::etBoat:         AddBoatEntity        ((cBoat *)            a_Entity); break;
-		case cEntity::etEnderCrystal: AddEnderCrystalEntity((cEnderCrystal *)    a_Entity); break;
-		case cEntity::etFallingBlock: AddFallingBlockEntity((cFallingBlock *)    a_Entity); break;
-		case cEntity::etMinecart:     AddMinecartEntity    ((cMinecart *)        a_Entity); break;
-		case cEntity::etMonster:      AddMonsterEntity     ((cMonster *)         a_Entity); break;
-		case cEntity::etPickup:       AddPickupEntity      ((cPickup *)          a_Entity); break;
-		case cEntity::etProjectile:   AddProjectileEntity  ((cProjectileEntity *)a_Entity); break;
-		case cEntity::etTNT:          AddTNTEntity         ((cTNTEntity *)       a_Entity); break;
-		case cEntity::etExpOrb:       AddExpOrbEntity      ((cExpOrb *)          a_Entity); break;
-		case cEntity::etItemFrame:    AddItemFrameEntity   ((cItemFrame *)       a_Entity); break;
-		case cEntity::etPainting:     AddPaintingEntity    (reinterpret_cast<cPainting *>(a_Entity)); break;
+		case cEntity::etBoat:         AddBoatEntity        (reinterpret_cast<cBoat *>            (a_Entity)); break;
+		case cEntity::etEnderCrystal: AddEnderCrystalEntity(reinterpret_cast<cEnderCrystal *>    (a_Entity)); break;
+		case cEntity::etFallingBlock: AddFallingBlockEntity(reinterpret_cast<cFallingBlock *>    (a_Entity)); break;
+		case cEntity::etMinecart:     AddMinecartEntity    (reinterpret_cast<cMinecart *>        (a_Entity)); break;
+		case cEntity::etMonster:      AddMonsterEntity     (reinterpret_cast<cMonster *>         (a_Entity)); break;
+		case cEntity::etPickup:       AddPickupEntity      (reinterpret_cast<cPickup *>          (a_Entity)); break;
+		case cEntity::etProjectile:   AddProjectileEntity  (reinterpret_cast<cProjectileEntity *>(a_Entity)); break;
+		case cEntity::etTNT:          AddTNTEntity         (reinterpret_cast<cTNTEntity *>       (a_Entity)); break;
+		case cEntity::etExpOrb:       AddExpOrbEntity      (reinterpret_cast<cExpOrb *>          (a_Entity)); break;
+		case cEntity::etItemFrame:    AddItemFrameEntity   (reinterpret_cast<cItemFrame *>       (a_Entity)); break;
+		case cEntity::etPainting:     AddPaintingEntity    (reinterpret_cast<cPainting *>        (a_Entity)); break;
 		case cEntity::etPlayer: return;  // Players aren't saved into the world
 		default:
 		{
@@ -909,23 +937,23 @@ void cNBTChunkSerializer::BlockEntity(cBlockEntity * a_Entity)
 	// Add tile-entity into NBT:
 	switch (a_Entity->GetBlockType())
 	{
-		case E_BLOCK_BEACON:        AddBeaconEntity      ((cBeaconEntity *)      a_Entity); break;
-		case E_BLOCK_CHEST:         AddChestEntity       ((cChestEntity *)       a_Entity, a_Entity->GetBlockType()); break;
-		case E_BLOCK_COMMAND_BLOCK: AddCommandBlockEntity((cCommandBlockEntity *)a_Entity); break;
-		case E_BLOCK_DISPENSER:     AddDispenserEntity   ((cDispenserEntity *)   a_Entity); break;
-		case E_BLOCK_DROPPER:       AddDropperEntity     ((cDropperEntity *)     a_Entity); break;
+		case E_BLOCK_BEACON:        AddBeaconEntity      (reinterpret_cast<cBeaconEntity *>      (a_Entity)); break;
+		case E_BLOCK_CHEST:         AddChestEntity       (reinterpret_cast<cChestEntity *>       (a_Entity), a_Entity->GetBlockType()); break;
+		case E_BLOCK_COMMAND_BLOCK: AddCommandBlockEntity(reinterpret_cast<cCommandBlockEntity *>(a_Entity)); break;
+		case E_BLOCK_DISPENSER:     AddDispenserEntity   (reinterpret_cast<cDispenserEntity *>   (a_Entity)); break;
+		case E_BLOCK_DROPPER:       AddDropperEntity     (reinterpret_cast<cDropperEntity *>     (a_Entity)); break;
 		case E_BLOCK_ENDER_CHEST:   /* No data to be saved */                               break;
-		case E_BLOCK_FLOWER_POT:    AddFlowerPotEntity   ((cFlowerPotEntity *)   a_Entity); break;
-		case E_BLOCK_FURNACE:       AddFurnaceEntity     ((cFurnaceEntity *)     a_Entity); break;
-		case E_BLOCK_HEAD:          AddMobHeadEntity     ((cMobHeadEntity *)     a_Entity); break;
-		case E_BLOCK_HOPPER:        AddHopperEntity      ((cHopperEntity *)      a_Entity); break;
-		case E_BLOCK_JUKEBOX:       AddJukeboxEntity     ((cJukeboxEntity *)     a_Entity); break;
-		case E_BLOCK_LIT_FURNACE:   AddFurnaceEntity     ((cFurnaceEntity *)     a_Entity); break;
-		case E_BLOCK_MOB_SPAWNER:   AddMobSpawnerEntity  ((cMobSpawnerEntity *)  a_Entity); break;
-		case E_BLOCK_NOTE_BLOCK:    AddNoteEntity        ((cNoteEntity *)        a_Entity); break;
-		case E_BLOCK_SIGN_POST:     AddSignEntity        ((cSignEntity *)        a_Entity); break;
-		case E_BLOCK_TRAPPED_CHEST: AddChestEntity       ((cChestEntity *)       a_Entity, a_Entity->GetBlockType()); break;
-		case E_BLOCK_WALLSIGN:      AddSignEntity        ((cSignEntity *)        a_Entity); break;
+		case E_BLOCK_FLOWER_POT:    AddFlowerPotEntity   (reinterpret_cast<cFlowerPotEntity *>   (a_Entity)); break;
+		case E_BLOCK_FURNACE:       AddFurnaceEntity     (reinterpret_cast<cFurnaceEntity *>     (a_Entity)); break;
+		case E_BLOCK_HEAD:          AddMobHeadEntity     (reinterpret_cast<cMobHeadEntity *>     (a_Entity)); break;
+		case E_BLOCK_HOPPER:        AddHopperEntity      (reinterpret_cast<cHopperEntity *>      (a_Entity)); break;
+		case E_BLOCK_JUKEBOX:       AddJukeboxEntity     (reinterpret_cast<cJukeboxEntity *>     (a_Entity)); break;
+		case E_BLOCK_LIT_FURNACE:   AddFurnaceEntity     (reinterpret_cast<cFurnaceEntity *>     (a_Entity)); break;
+		case E_BLOCK_MOB_SPAWNER:   AddMobSpawnerEntity  (reinterpret_cast<cMobSpawnerEntity *>  (a_Entity)); break;
+		case E_BLOCK_NOTE_BLOCK:    AddNoteEntity        (reinterpret_cast<cNoteEntity *>        (a_Entity)); break;
+		case E_BLOCK_SIGN_POST:     AddSignEntity        (reinterpret_cast<cSignEntity *>        (a_Entity)); break;
+		case E_BLOCK_TRAPPED_CHEST: AddChestEntity       (reinterpret_cast<cChestEntity *>       (a_Entity), a_Entity->GetBlockType()); break;
+		case E_BLOCK_WALLSIGN:      AddSignEntity        (reinterpret_cast<cSignEntity *>        (a_Entity)); break;
 
 		default:
 		{

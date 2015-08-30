@@ -5,108 +5,11 @@
 
 #include "Map.h"
 
-#include "ClientHandle.h"
 #include "World.h"
 #include "Chunk.h"
 #include "Entities/Player.h"
 #include "FastRandom.h"
-
-
-
-
-
-cMapDecorator::cMapDecorator(cMap * a_Map, eType a_Type, int a_X, int a_Z, int a_Rot)
-	: m_Map(a_Map)
-	, m_Type(a_Type)
-	, m_PixelX(a_X)
-	, m_PixelZ(a_Z)
-	, m_Rot(a_Rot)
-	, m_Player(nullptr)
-{
-}
-
-
-
-
-
-cMapDecorator::cMapDecorator(cMap * a_Map, cPlayer * a_Player)
-	: m_Map(a_Map)
-	, m_Type(E_TYPE_PLAYER)
-	, m_Player(a_Player)
-{
-	Update();
-}
-
-
-
-
-
-void cMapDecorator::Update(void)
-{
-	if (m_Player != nullptr)
-	{
-		ASSERT(m_Map != nullptr);
-		unsigned int PixelWidth = m_Map->GetPixelWidth();
-
-		int InsideWidth  = (m_Map->GetWidth()  / 2) - 1;
-		int InsideHeight = (m_Map->GetHeight() / 2) - 1;
-
-		int PixelX = (int) (m_Player->GetPosX() - m_Map->GetCenterX()) / PixelWidth;
-		int PixelZ = (int) (m_Player->GetPosZ() - m_Map->GetCenterZ()) / PixelWidth;
-
-		// Center of pixel
-		m_PixelX = (2 * PixelX) + 1;
-		m_PixelZ = (2 * PixelZ) + 1;
-
-		if ((PixelX > -InsideWidth) && (PixelX <= InsideWidth) && (PixelZ > -InsideHeight) && (PixelZ <= InsideHeight))
-		{
-			double Yaw = m_Player->GetYaw();
-
-			if (m_Map->GetDimension() == dimNether)
-			{
-				cFastRandom Random;
-
-				// TODO 2014-02-19 xdot: Refine
-				m_Rot = Random.NextInt(16);
-			}
-			else
-			{
-				m_Rot = (int) (Yaw * 16) / 360;
-			}
-
-			m_Type = E_TYPE_PLAYER;
-		}
-		else
-		{
-			if ((abs(PixelX) > 320.0) || (abs(PixelZ) > 320.0))
-			{
-				// TODO 2014-02-18 xdot: Remove decorator
-			}
-
-			m_Rot = 0;
-
-			m_Type = E_TYPE_PLAYER_OUTSIDE;
-
-			// Move to border
-			if (PixelX <= -InsideWidth)
-			{
-				m_PixelX = (2 * -InsideWidth) + 1;
-			}
-			if (PixelZ <= -InsideHeight)
-			{
-				m_PixelZ = (2 * -InsideHeight) + 1;
-			}
-			if (PixelX > InsideWidth)
-			{
-				m_PixelX = (2 * InsideWidth) + 1;
-			}
-			if (PixelZ > InsideHeight)
-			{
-				m_PixelZ = (2 * InsideHeight) + 1;
-			}
-		}
-	}
-}
+#include "Blocks/BlockHandler.h"
 
 
 
@@ -148,22 +51,36 @@ cMap::cMap(unsigned int a_ID, int a_CenterX, int a_CenterZ, cWorld * a_World, un
 
 
 
+void cMap::Tick()
+{
+	for (const auto & Client : m_ClientsInCurrentTick)
+	{
+		Client->SendMapData(*this, 0, 0);
+	}
+	m_ClientsInCurrentTick.clear();
+	m_Decorators.clear();
+}
+
+
+
+
+
 void cMap::UpdateRadius(int a_PixelX, int a_PixelZ, unsigned int a_Radius)
 {
-	int PixelRadius = a_Radius / GetPixelWidth();
+	int PixelRadius = static_cast<int>(a_Radius / GetPixelWidth());
 
-	unsigned int StartX = Clamp(a_PixelX - PixelRadius, 0, (int)m_Width);
-	unsigned int StartZ = Clamp(a_PixelZ - PixelRadius, 0, (int)m_Height);
+	unsigned int StartX = static_cast<unsigned int>(Clamp(a_PixelX - PixelRadius, 0, static_cast<int>(m_Width)));
+	unsigned int StartZ = static_cast<unsigned int>(Clamp(a_PixelZ - PixelRadius, 0, static_cast<int>(m_Height)));
 
-	unsigned int EndX   = Clamp(a_PixelX + PixelRadius, 0, (int)m_Width);
-	unsigned int EndZ   = Clamp(a_PixelZ + PixelRadius, 0, (int)m_Height);
+	unsigned int EndX   = static_cast<unsigned int>(Clamp(a_PixelX + PixelRadius, 0, static_cast<int>(m_Width)));
+	unsigned int EndZ   = static_cast<unsigned int>(Clamp(a_PixelZ + PixelRadius, 0, static_cast<int>(m_Height)));
 
 	for (unsigned int X = StartX; X < EndX; ++X)
 	{
 		for (unsigned int Z = StartZ; Z < EndZ; ++Z)
 		{
-			int dX = X - a_PixelX;
-			int dZ = Z - a_PixelZ;
+			int dX = static_cast<int>(X) - a_PixelX;
+			int dZ = static_cast<int>(Z) - a_PixelZ;
 
 			if ((dX * dX) + (dZ * dZ) < (PixelRadius * PixelRadius))
 			{
@@ -179,10 +96,10 @@ void cMap::UpdateRadius(int a_PixelX, int a_PixelZ, unsigned int a_Radius)
 
 void cMap::UpdateRadius(cPlayer & a_Player, unsigned int a_Radius)
 {
-	unsigned int PixelWidth = GetPixelWidth();
+	int PixelWidth = static_cast<int>(GetPixelWidth());
 
-	int PixelX = (int) (a_Player.GetPosX() - m_CenterX) / PixelWidth + (m_Width  / 2);
-	int PixelZ = (int) (a_Player.GetPosZ() - m_CenterZ) / PixelWidth + (m_Height / 2);
+	int PixelX = static_cast<int>(a_Player.GetPosX() - m_CenterX) / PixelWidth + static_cast<int>(m_Width  / 2);
+	int PixelZ = static_cast<int>(a_Player.GetPosZ() - m_CenterZ) / PixelWidth + static_cast<int>(m_Height / 2);
 
 	UpdateRadius(PixelX, PixelZ, a_Radius);
 }
@@ -193,10 +110,8 @@ void cMap::UpdateRadius(cPlayer & a_Player, unsigned int a_Radius)
 
 bool cMap::UpdatePixel(unsigned int a_X, unsigned int a_Z)
 {
-	unsigned int PixelWidth = GetPixelWidth();
-
-	int BlockX = m_CenterX + ((a_X - (m_Width  / 2)) * PixelWidth);
-	int BlockZ = m_CenterZ + ((a_Z - (m_Height / 2)) * PixelWidth);
+	int BlockX = m_CenterX + static_cast<int>((a_X - m_Width  / 2) * GetPixelWidth());
+	int BlockZ = m_CenterZ + static_cast<int>((a_Z - m_Height / 2) * GetPixelWidth());
 
 	int ChunkX, ChunkZ;
 	cChunkDef::BlockToChunk(BlockX, BlockZ, ChunkX, ChunkZ);
@@ -219,12 +134,10 @@ bool cMap::UpdatePixel(unsigned int a_X, unsigned int a_Z)
 
 		virtual bool Item(cChunk * a_Chunk) override
 		{
-			if (a_Chunk == nullptr)
+			if (!a_Chunk->IsValid())
 			{
 				return false;
 			}
-
-			unsigned int CallbackPixelWidth = m_Map->GetPixelWidth();
 
 			if (m_Map->GetDimension() == dimNether)
 			{
@@ -233,84 +146,34 @@ bool cMap::UpdatePixel(unsigned int a_X, unsigned int a_Z)
 				return false;
 			}
 
-			typedef std::map<ColorID, unsigned int> ColorCountMap;
-			ColorCountMap ColorCounts;
+			static const std::array<unsigned char, 4> BrightnessID = { { 3, 0, 1, 2 } };  // Darkest to lightest
+			BLOCKTYPE TargetBlock;
+			NIBBLETYPE TargetMeta;
 
-			// Count surface blocks
-			for (unsigned int X = m_RelX; X < m_RelX + CallbackPixelWidth; ++X)
+			auto Height = a_Chunk->GetHeight(m_RelX, m_RelZ);
+			auto ChunkHeight = cChunkDef::Height;
+			a_Chunk->GetBlockTypeMeta(m_RelX, Height, m_RelZ, TargetBlock, TargetMeta);
+			auto ColourID = BlockHandler(TargetBlock)->GetMapBaseColourID(TargetMeta);
+
+			if (IsBlockWater(TargetBlock))
 			{
-				for (unsigned int Z = m_RelZ; Z < m_RelZ + CallbackPixelWidth; ++Z)
+				ChunkHeight /= 4;
+				while (((--Height) != -1) && IsBlockWater(a_Chunk->GetBlock(m_RelX, Height, m_RelZ)))
 				{
-					// unsigned int WaterDepth = 0;
-
-					BLOCKTYPE TargetBlock = E_BLOCK_AIR;
-					NIBBLETYPE TargetMeta = 0;
-
-					int Height = a_Chunk->GetHeight(X, Z);
-
-					while (Height > 0)
-					{
-						a_Chunk->GetBlockTypeMeta(X, Height, Z, TargetBlock, TargetMeta);
-
-						// TODO 2014-02-22 xdot: Check if block color is transparent
-						if (TargetBlock == E_BLOCK_AIR)
-						{
-							--Height;
-							continue;
-						}
-						// TODO 2014-02-22 xdot: Check if block is liquid
-						/*
-						else if (false)
-						{
-							--Height;
-							++WaterDepth;
-							continue;
-						}
-						*/
-
-						break;
-					}
-
-					// TODO 2014-02-22 xdot: Query block color
-					ColorID Color = E_BASE_COLOR_BROWN;
-
-					// Debug - Temporary
-					switch (TargetBlock)
-					{
-						case E_BLOCK_GRASS:
-						{
-							Color = E_BASE_COLOR_LIGHT_GREEN; break;
-						}
-						case E_BLOCK_STATIONARY_WATER:
-						case E_BLOCK_WATER:
-						{
-							Color = E_BASE_COLOR_BLUE; break;
-						}
-					}
-
-					++ColorCounts[Color];
+					continue;
+				}
+			}
+			else if (ColourID == 0)
+			{
+				while (((--Height) != -1) && ((ColourID = BlockHandler(a_Chunk->GetBlock(m_RelX, Height, m_RelZ))->GetMapBaseColourID(a_Chunk->GetMeta(m_RelX, Height, m_RelZ))) == 0))
+				{
+					continue;
 				}
 			}
 
-			// Find dominant color
-			ColorID PixelColor = E_BASE_COLOR_TRANSPARENT;
-
-			unsigned int MaxCount = 0;
-
-			for (ColorCountMap::iterator it = ColorCounts.begin(); it != ColorCounts.end(); ++it)
-			{
-				if (it->second > MaxCount)
-				{
-					PixelColor = it->first;
-					MaxCount = it->second;
-				}
-			}
-
-			// TODO 2014-02-22 xdot: Adjust brightness
-			unsigned int dColor = 1;
-
-			m_PixelData = PixelColor + dColor;
-
+			// Multiply base color ID by 4 and add brightness ID
+			const int BrightnessIDSize = static_cast<int>(BrightnessID.size());
+			m_PixelData = ColourID * 4 + BrightnessID[static_cast<size_t>(Clamp<int>((BrightnessIDSize * Height) / ChunkHeight, 0, BrightnessIDSize - 1))];
 			return false;
 		}
 
@@ -332,162 +195,11 @@ bool cMap::UpdatePixel(unsigned int a_X, unsigned int a_Z)
 
 
 
-void cMap::UpdateDecorators(void)
-{
-	for (cMapDecoratorList::iterator it = m_Decorators.begin(); it != m_Decorators.end(); ++it)
-	{
-		it->Update();
-	}
-}
-
-
-
-
-
-void cMap::AddPlayer(cPlayer * a_Player, Int64 a_WorldAge)
-{
-	cClientHandle * Handle = a_Player->GetClientHandle();
-	if (Handle == nullptr)
-	{
-		return;
-	}
-
-	cMapClient MapClient;
-
-	MapClient.m_LastUpdate = a_WorldAge;
-	MapClient.m_SendInfo   = true;
-	MapClient.m_Handle     = Handle;
-	MapClient.m_DataUpdate = 0;
-	MapClient.m_NextDecoratorUpdate = 0;
-
-	m_Clients.push_back(MapClient);
-
-	cMapDecorator PlayerDecorator(this, a_Player);
-
-	m_Decorators.push_back(PlayerDecorator);
-}
-
-
-
-
-
-void cMap::RemoveInactiveClients(Int64 a_WorldAge)
-{
-	for (cMapClientList::iterator it = m_Clients.begin(); it != m_Clients.end();)
-	{
-		if (it->m_LastUpdate < a_WorldAge)
-		{
-			// Remove associated decorators
-			for (cMapDecoratorList::iterator it2 = m_Decorators.begin(); it2 != m_Decorators.end();)
-			{
-				if (it2->GetPlayer()->GetClientHandle() == it->m_Handle)
-				{
-					// Erase decorator
-					cMapDecoratorList::iterator temp = it2;
-					++it2;
-					m_Decorators.erase(temp);
-				}
-				else
-				{
-					++it2;
-				}
-			}
-
-			// Erase client
-			cMapClientList::iterator temp = it;
-			++it;
-			m_Clients.erase(temp);
-		}
-		else
-		{
-			++it;
-		}
-	}
-}
-
-
-
-
-
-void cMap::StreamNext(cMapClient & a_Client)
-{
-	cClientHandle * Handle = a_Client.m_Handle;
-
-	if (a_Client.m_SendInfo)
-	{
-		Handle->SendMapInfo(m_ID, m_Scale);
-
-		a_Client.m_SendInfo = false;
-
-		return;
-	}
-
-	++a_Client.m_NextDecoratorUpdate;
-
-	if (a_Client.m_NextDecoratorUpdate >= 4)
-	{
-		// TODO 2014-02-19 xdot
-		// This is dangerous as the player object may have been destroyed before the decorator is erased from the list
-		UpdateDecorators();
-
-		Handle->SendMapDecorators(m_ID, m_Decorators, m_Scale);
-
-		a_Client.m_NextDecoratorUpdate = 0;
-	}
-	else
-	{
-		++a_Client.m_DataUpdate;
-
-		unsigned int Y = (a_Client.m_DataUpdate * 11) % m_Width;
-
-		const Byte * Colors = &m_Data[Y * m_Height];
-
-		Handle->SendMapColumn(m_ID, Y, 0, Colors, m_Height, m_Scale);
-	}
-}
-
-
-
-
-
 void cMap::UpdateClient(cPlayer * a_Player)
 {
 	ASSERT(a_Player != nullptr);
-	cClientHandle * Handle = a_Player->GetClientHandle();
-
-	if (Handle == nullptr)
-	{
-		return;
-	}
-
-	Int64 WorldAge = a_Player->GetWorld()->GetWorldAge();
-
-	RemoveInactiveClients(WorldAge - 5);
-
-	// Linear search for client state
-	for (cMapClientList::iterator it = m_Clients.begin(); it != m_Clients.end(); ++it)
-	{
-		if (it->m_Handle == Handle)
-		{
-			it->m_LastUpdate = WorldAge;
-
-			StreamNext(*it);
-
-			return;
-		}
-	}
-
-	// New player, construct a new client state
-	AddPlayer(a_Player, WorldAge);
-}
-
-
-
-
-
-void cMap::EraseData(void)
-{
-	m_Data.assign(m_Width * m_Height, 0);
+	m_Decorators.emplace_back(CreateDecorator(a_Player));
+	m_ClientsInCurrentTick.push_back(a_Player->GetClientHandle());
 }
 
 
@@ -532,30 +244,11 @@ void cMap::SetPosition(int a_CenterX, int a_CenterZ)
 
 
 
-void cMap::SetScale(unsigned int a_Scale)
-{
-	if (m_Scale == a_Scale)
-	{
-		return;
-	}
-
-	m_Scale = a_Scale;
-
-	for (cMapClientList::iterator it = m_Clients.begin(); it != m_Clients.end(); ++it)
-	{
-		it->m_SendInfo = true;
-	}
-}
-
-
-
-
-
 bool cMap::SetPixel(unsigned int a_X, unsigned int a_Z, cMap::ColorID a_Data)
 {
 	if ((a_X < m_Width) && (a_Z < m_Height))
 	{
-		m_Data[a_Z + (a_X * m_Height)] = a_Data;
+		m_Data[a_Z * m_Width + a_X] = a_Data;
 
 		return true;
 	}
@@ -573,30 +266,12 @@ cMap::ColorID cMap::GetPixel(unsigned int a_X, unsigned int a_Z)
 {
 	if ((a_X < m_Width) && (a_Z < m_Height))
 	{
-		return m_Data[a_Z + (a_X * m_Height)];
+		return m_Data[a_Z * m_Width + a_X];
 	}
 	else
 	{
 		return E_BASE_COLOR_TRANSPARENT;
 	}
-}
-
-
-
-
-
-void cMap::SendTo(cClientHandle & a_Client)
-{
-	a_Client.SendMapInfo(m_ID, m_Scale);
-
-	for (unsigned int i = 0; i < m_Width; ++i)
-	{
-		const Byte * Colors = &m_Data[i * m_Height];
-
-		a_Client.SendMapColumn(m_ID, i, 0, Colors, m_Height, m_Scale);
-	}
-
-	a_Client.SendMapDecorators(m_ID, m_Decorators, m_Scale);
 }
 
 
@@ -612,9 +287,66 @@ unsigned int cMap::GetNumPixels(void) const
 
 
 
-size_t cMap::GetNumDecorators(void) const
+const cMapDecorator cMap::CreateDecorator(const cEntity * a_TrackedEntity)
 {
-	return m_Decorators.size();
+	int InsideWidth = (GetWidth() / 2) - 1;
+	int InsideHeight = (GetHeight() / 2) - 1;
+	
+	// Center of pixel
+	int PixelX = static_cast<int>(a_TrackedEntity->GetPosX() - GetCenterX()) / static_cast<int>(GetPixelWidth());
+	int PixelZ = static_cast<int>(a_TrackedEntity->GetPosZ() - GetCenterZ()) / static_cast<int>(GetPixelWidth());
+
+	cMapDecorator::eType Type;
+	int Rot;
+
+	if ((PixelX > -InsideWidth) && (PixelX <= InsideWidth) && (PixelZ > -InsideHeight) && (PixelZ <= InsideHeight))
+	{
+		double Yaw = a_TrackedEntity->GetYaw();
+
+		if (GetDimension() == dimNether)
+		{
+			cFastRandom Random;
+
+			// TODO 2014-02-19 xdot: Refine
+			Rot = Random.NextInt(16);
+		}
+		else
+		{
+			Rot = CeilC(((Yaw - 11.25) * 16) / 360);
+		}
+
+		Type = cMapDecorator::eType::E_TYPE_PLAYER;
+	}
+	else
+	{
+		if ((PixelX > 320.0) || (PixelZ > 320.0))
+		{
+			;
+		}
+
+		Rot = 0;
+		Type = cMapDecorator::eType::E_TYPE_PLAYER_OUTSIDE;
+
+		// Move to border
+		if (PixelX <= -InsideWidth)
+		{
+			PixelX = -InsideWidth;
+		}
+		if (PixelZ <= -InsideHeight)
+		{
+			PixelZ = -InsideHeight;
+		}
+		if (PixelX > InsideWidth)
+		{
+			PixelX = InsideWidth;
+		}
+		if (PixelZ > InsideHeight)
+		{
+			PixelZ = InsideHeight;
+		}
+	}
+
+	return {Type, static_cast<unsigned>(2 * PixelX + 1), static_cast<unsigned>(2 * PixelZ + 1), Rot};
 }
 
 
@@ -622,7 +354,7 @@ size_t cMap::GetNumDecorators(void) const
 
 unsigned int cMap::GetPixelWidth(void) const
 {
-	return (int) pow(2.0, (double) m_Scale);
+	return static_cast<unsigned int>(pow(2.0, static_cast<double>(m_Scale)));
 }
 
 

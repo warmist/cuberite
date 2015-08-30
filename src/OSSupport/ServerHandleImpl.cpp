@@ -123,7 +123,7 @@ bool cServerHandleImpl::Listen(UInt16 a_Port)
 	// Set up the main socket:
 	// It should listen on IPv6 with IPv4 fallback, when available; IPv4 when IPv6 is not available.
 	bool NeedsTwoSockets = false;
-	int err;
+	int err = 0;
 	evutil_socket_t MainSock = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 
 	if (!IsValidSocket(MainSock))
@@ -271,6 +271,8 @@ bool cServerHandleImpl::Listen(UInt16 a_Port)
 		return true;  // Report as success, the primary socket is working
 	}
 
+	UNUSED(err);
+
 	m_SecondaryConnListener = evconnlistener_new(cNetworkSingleton::Get().GetEventBase(), Callback, this, LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, 0, SecondSock);
 	return true;
 }
@@ -294,14 +296,14 @@ void cServerHandleImpl::Callback(evconnlistener * a_Listener, evutil_socket_t a_
 		case AF_INET:
 		{
 			sockaddr_in * sin = reinterpret_cast<sockaddr_in *>(a_Addr);
-			evutil_inet_ntop(AF_INET, sin, IPAddress, ARRAYCOUNT(IPAddress));
+			evutil_inet_ntop(AF_INET, &(sin->sin_addr), IPAddress, ARRAYCOUNT(IPAddress));
 			Port = ntohs(sin->sin_port);
 			break;
 		}
 		case AF_INET6:
 		{
 			sockaddr_in6 * sin6 = reinterpret_cast<sockaddr_in6 *>(a_Addr);
-			evutil_inet_ntop(AF_INET, sin6, IPAddress, ARRAYCOUNT(IPAddress));
+			evutil_inet_ntop(AF_INET6, &(sin6->sin6_addr), IPAddress, ARRAYCOUNT(IPAddress));
 			Port = ntohs(sin6->sin6_port);
 			break;
 		}

@@ -531,12 +531,15 @@ void cItemHandler::OnFoodEaten(cWorld * a_World, cPlayer * a_Player, cItem * a_I
 
 short cItemHandler::GetDurabilityLossByAction(eDurabilityLostAction a_Action)
 {
-	switch ((int)a_Action)
+	switch (a_Action)
 	{
 		case dlaAttackEntity: return 2;
 		case dlaBreakBlock:   return 1;
 	}
+	
+	#ifndef __clang__
 	return 0;
+	#endif
 }
 
 
@@ -587,6 +590,7 @@ char cItemHandler::GetMaxStackSize(void)
 		case E_ITEM_DYE:                  return 64;
 		case E_ITEM_EGG:                  return 16;
 		case E_ITEM_EMERALD:              return 64;
+		case E_ITEM_EMPTY_MAP:            return 64;
 		case E_ITEM_ENDER_PEARL:          return 16;
 		case E_ITEM_EYE_OF_ENDER:         return 64;
 		case E_ITEM_FEATHER:              return 64;
@@ -732,7 +736,7 @@ bool cItemHandler::CanHarvestBlock(BLOCKTYPE a_BlockType)
 		case E_BLOCK_DEAD_BUSH:
 		case E_BLOCK_DIAMOND_BLOCK:
 		case E_BLOCK_DIAMOND_ORE:
-		case E_BLOCK_DOUBLE_NEW_STONE_SLAB:
+		case E_BLOCK_DOUBLE_RED_SANDSTONE_SLAB:
 		case E_BLOCK_DOUBLE_STONE_SLAB:
 		case E_BLOCK_EMERALD_ORE:
 		case E_BLOCK_ENCHANTMENT_TABLE:
@@ -752,7 +756,7 @@ bool cItemHandler::CanHarvestBlock(BLOCKTYPE a_BlockType)
 		case E_BLOCK_NETHER_BRICK_STAIRS:
 		case E_BLOCK_NETHER_BRICK_FENCE:
 		case E_BLOCK_NETHERRACK:
-		case E_BLOCK_NEW_STONE_SLAB:
+		case E_BLOCK_RED_SANDSTONE_SLAB:
 		case E_BLOCK_OBSIDIAN:
 		case E_BLOCK_PACKED_ICE:
 		case E_BLOCK_PRISMARINE_BLOCK:

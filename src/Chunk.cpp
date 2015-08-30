@@ -411,7 +411,7 @@ void cChunk::WriteBlockArea(cBlockArea & a_Area, int a_MinBlockX, int a_MinBlock
 	int OffZ = BlockStartZ - m_PosZ * cChunkDef::Width;
 	int BaseX = BlockStartX - a_MinBlockX;
 	int BaseZ = BlockStartZ - a_MinBlockZ;
-	int SizeY = a_Area.GetSizeY();
+	int SizeY = std::min(a_Area.GetSizeY(), cChunkDef::Height - a_MinBlockY);
 
 	// TODO: Improve this by not calling FastSetBlock() and doing the processing here
 	// so that the heightmap is touched only once for each column.
@@ -442,7 +442,6 @@ void cChunk::WriteBlockArea(cBlockArea & a_Area, int a_MinBlockX, int a_MinBlock
 
 
 
-/// Returns true if there is a block entity at the coords specified
 bool cChunk::HasBlockEntityAt(int a_BlockX, int a_BlockY, int a_BlockZ)
 {
 	for (cBlockEntityList::iterator itr = m_BlockEntities.begin(); itr != m_BlockEntities.end(); ++itr)
@@ -1018,20 +1017,26 @@ void cChunk::GrowMelonPumpkin(int a_RelX, int a_RelY, int a_RelZ, BLOCKTYPE a_Bl
 	
 	// Check if there's soil under the neighbor. We already know the neighbors are valid. Place produce if ok
 	BLOCKTYPE Soil;
-	UnboundedRelGetBlock(a_RelX + x, a_RelY - 1, a_RelZ + z, Soil, BlockMeta);
+	VERIFY(UnboundedRelGetBlock(a_RelX + x, a_RelY - 1, a_RelZ + z, Soil, BlockMeta));
 	switch (Soil)
 	{
 		case E_BLOCK_DIRT:
 		case E_BLOCK_GRASS:
 		case E_BLOCK_FARMLAND:
 		{
-			// DEBUG: This is here to catch FS #349 - melons growing over other crops.
-			LOG("Growing melon / pumpkin overwriting %s, growing on %s",
-				ItemTypeToString(BlockType[CheckType]).c_str(),
-				ItemTypeToString(Soil).c_str()
-			);
 			// Place a randomly-facing produce:
-			UnboundedRelFastSetBlock(a_RelX + x, a_RelY, a_RelZ + z, ProduceType, (NIBBLETYPE)(a_TickRandom.randInt(4) % 4));
+			NIBBLETYPE Meta = (ProduceType == E_BLOCK_MELON) ? 0 : static_cast<NIBBLETYPE>(a_TickRandom.randInt(4) % 4);
+			LOGD("Growing melon / pumpkin at {%d, %d, %d} (<%d, %d> from stem), overwriting %s, growing on top of %s, meta %d",
+				a_RelX + x + m_PosX * cChunkDef::Width, a_RelY, a_RelZ + z + m_PosZ * cChunkDef::Width,
+				x, z,
+				ItemTypeToString(BlockType[CheckType]).c_str(),
+				ItemTypeToString(Soil).c_str(),
+				Meta
+			);
+			VERIFY(UnboundedRelFastSetBlock(a_RelX + x, a_RelY, a_RelZ + z, ProduceType, Meta));
+			auto Absolute = RelativeToAbsolute(Vector3i{a_RelX + x, a_RelY, a_RelZ + z}, m_PosX, m_PosZ);
+			cChunkInterface ChunkInterface(this->GetWorld()->GetChunkMap());
+			cBlockHandler::NeighborChanged(ChunkInterface, Absolute.x, Absolute.y - 1, Absolute.z, BLOCK_FACE_YP);
 			break;
 		}
 	}
@@ -1435,7 +1440,7 @@ void cChunk::CalculateHeightmap(const BLOCKTYPE * a_BlockTypes)
 				int index = MakeIndex( x, y, z);
 				if (a_BlockTypes[index] != E_BLOCK_AIR)
 				{
-					m_HeightMap[x + z * Width] = (HEIGHTTYPE)y;
+					m_HeightMap[x + z * Width] = static_cast<HEIGHTTYPE>(y);
 					break;
 				}
 			}  // for y
@@ -1609,7 +1614,7 @@ void cChunk::FastSetBlock(int a_RelX, int a_RelY, int a_RelZ, BLOCKTYPE a_BlockT
 	{
 		if (a_BlockType != E_BLOCK_AIR)
 		{
-			m_HeightMap[a_RelX + a_RelZ * Width] = (HEIGHTTYPE)a_RelY;
+			m_HeightMap[a_RelX + a_RelZ * Width] = static_cast<HEIGHTTYPE>(a_RelY);
 		}
 		else
 		{
@@ -1617,7 +1622,7 @@ void cChunk::FastSetBlock(int a_RelX, int a_RelY, int a_RelZ, BLOCKTYPE a_BlockT
 			{
 				if (GetBlock(a_RelX, y, a_RelZ) != E_BLOCK_AIR)
 				{
-					m_HeightMap[a_RelX + a_RelZ * Width] = (HEIGHTTYPE)y;
+					m_HeightMap[a_RelX + a_RelZ * Width] = static_cast<HEIGHTTYPE>(y);
 					break;
 				}
 			}  // for y - column in m_BlockData
@@ -1775,9 +1780,9 @@ void cChunk::CollectPickupsByPlayer(cPlayer & a_Player)
 		{
 			continue;  // Only pickups and projectiles can be picked up
 		}
-		float DiffX = (float)((*itr)->GetPosX() - PosX);
-		float DiffY = (float)((*itr)->GetPosY() - PosY);
-		float DiffZ = (float)((*itr)->GetPosZ() - PosZ);
+		float DiffX = static_cast<float>((*itr)->GetPosX() - PosX);
+		float DiffY = static_cast<float>((*itr)->GetPosY() - PosY);
+		float DiffZ = static_cast<float>((*itr)->GetPosZ() - PosZ);
 		float SqrDist = DiffX * DiffX + DiffY * DiffY + DiffZ * DiffZ;
 		if (SqrDist < 1.5f * 1.5f)  // 1.5 block
 		{
@@ -2073,7 +2078,7 @@ bool cChunk::ForEachChest(cChestCallback & a_Callback)
 		{
 			continue;
 		}
-		if (a_Callback.Item((cChestEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cChestEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2095,7 +2100,7 @@ bool cChunk::ForEachDispenser(cDispenserCallback & a_Callback)
 		{
 			continue;
 		}
-		if (a_Callback.Item((cDispenserEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cDispenserEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2117,7 +2122,7 @@ bool cChunk::ForEachDropper(cDropperCallback & a_Callback)
 		{
 			continue;
 		}
-		if (a_Callback.Item((cDropperEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cDropperEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2139,7 +2144,7 @@ bool cChunk::ForEachDropSpenser(cDropSpenserCallback & a_Callback)
 		{
 			continue;
 		}
-		if (a_Callback.Item((cDropSpenserEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cDropSpenserEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2169,7 +2174,7 @@ bool cChunk::ForEachFurnace(cFurnaceCallback & a_Callback)
 				continue;
 			}
 		}
-		if (a_Callback.Item((cFurnaceEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cFurnaceEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2263,7 +2268,7 @@ bool cChunk::DoWithBeaconAt(int a_BlockX, int a_BlockY, int a_BlockZ, cBeaconCal
 		}
 		
 		// The correct block entity is here
-		if (a_Callback.Item((cBeaconEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cBeaconEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2295,7 +2300,7 @@ bool cChunk::DoWithChestAt(int a_BlockX, int a_BlockY, int a_BlockZ, cChestCallb
 		}
 		
 		// The correct block entity is here
-		if (a_Callback.Item((cChestEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cChestEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2327,7 +2332,7 @@ bool cChunk::DoWithDispenserAt(int a_BlockX, int a_BlockY, int a_BlockZ, cDispen
 		}
 		
 		// The correct block entity is here
-		if (a_Callback.Item((cDispenserEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cDispenserEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2359,7 +2364,7 @@ bool cChunk::DoWithDropperAt(int a_BlockX, int a_BlockY, int a_BlockZ, cDropperC
 		}
 		
 		// The correct block entity is here
-		if (a_Callback.Item((cDropperEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cDropperEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2391,7 +2396,7 @@ bool cChunk::DoWithDropSpenserAt(int a_BlockX, int a_BlockY, int a_BlockZ, cDrop
 		}
 		
 		// The correct block entity is here
-		if (a_Callback.Item((cDropSpenserEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cDropSpenserEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2431,7 +2436,7 @@ bool cChunk::DoWithFurnaceAt(int a_BlockX, int a_BlockY, int a_BlockZ, cFurnaceC
 		}  // switch (BlockType)
 		
 		// The correct block entity is here,
-		if (a_Callback.Item((cFurnaceEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cFurnaceEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2463,7 +2468,7 @@ bool cChunk::DoWithNoteBlockAt(int a_BlockX, int a_BlockY, int a_BlockZ, cNoteBl
 		}
 		
 		// The correct block entity is here
-		if (a_Callback.Item((cNoteEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cNoteEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2495,7 +2500,7 @@ bool cChunk::DoWithCommandBlockAt(int a_BlockX, int a_BlockY, int a_BlockZ, cCom
 		}
 		
 		// The correct block entity is here,
-		if (a_Callback.Item((cCommandBlockEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cCommandBlockEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2527,7 +2532,7 @@ bool cChunk::DoWithMobHeadAt(int a_BlockX, int a_BlockY, int a_BlockZ, cMobHeadC
 		}
 		
 		// The correct block entity is here,
-		if (a_Callback.Item((cMobHeadEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cMobHeadEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2559,7 +2564,7 @@ bool cChunk::DoWithFlowerPotAt(int a_BlockX, int a_BlockY, int a_BlockZ, cFlower
 		}
 		
 		// The correct block entity is here
-		if (a_Callback.Item((cFlowerPotEntity *)*itr))
+		if (a_Callback.Item(reinterpret_cast<cFlowerPotEntity *>(*itr)))
 		{
 			return false;
 		}
@@ -2588,10 +2593,10 @@ bool cChunk::GetSignLines(int a_BlockX, int a_BlockY, int a_BlockZ, AString & a_
 			case E_BLOCK_WALLSIGN:
 			case E_BLOCK_SIGN_POST:
 			{
-				a_Line1 = ((cSignEntity *)*itr)->GetLine(0);
-				a_Line2 = ((cSignEntity *)*itr)->GetLine(1);
-				a_Line3 = ((cSignEntity *)*itr)->GetLine(2);
-				a_Line4 = ((cSignEntity *)*itr)->GetLine(3);
+				a_Line1 = reinterpret_cast<cSignEntity *>(*itr)->GetLine(0);
+				a_Line2 = reinterpret_cast<cSignEntity *>(*itr)->GetLine(1);
+				a_Line3 = reinterpret_cast<cSignEntity *>(*itr)->GetLine(2);
+				a_Line4 = reinterpret_cast<cSignEntity *>(*itr)->GetLine(3);
 				return true;
 			}
 		}  // switch (BlockType)
@@ -2845,22 +2850,6 @@ void cChunk::BroadcastBlockEntity(int a_BlockX, int a_BlockY, int a_BlockZ, cons
 			continue;
 		}
 		Entity->SendTo(*(*itr));
-	}  // for itr - LoadedByClient[]
-}
-
-
-
-
-
-void cChunk::BroadcastChunkData(cChunkDataSerializer & a_Serializer, const cClientHandle * a_Exclude)
-{
-	for (cClientHandleList::iterator itr = m_LoadedByClient.begin(); itr != m_LoadedByClient.end(); ++itr)
-	{
-		if (*itr == a_Exclude)
-		{
-			continue;
-		}
-		(*itr)->SendChunkData(m_PosX, m_PosZ, a_Serializer);
 	}  // for itr - LoadedByClient[]
 }
 

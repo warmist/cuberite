@@ -76,8 +76,8 @@ cMonster::cMonster(const AString & a_ConfigName, eMonsterType a_MobType, const A
 	, m_Target(nullptr)
 	, m_Path(nullptr)
 	, m_IsFollowingPath(false)
+	, m_PathfinderActivated(false)
 	, m_GiveUpCounter(0)
-	, m_TicksSinceLastPathReset(1000)
 	, m_LastGroundHeight(POSY_TOINT)
 	, m_JumpCoolDown(0)
 	, m_IdleInterval(0)
@@ -101,6 +101,7 @@ cMonster::cMonster(const AString & a_ConfigName, eMonsterType a_MobType, const A
 	, m_TicksSinceLastDamaged(100)
 	, m_BurnsInDaylight(false)
 	, m_RelativeWalkSpeed(1)
+	, m_Age(1)
 {
 	if (!a_ConfigName.empty())
 	{
@@ -123,40 +124,15 @@ void cMonster::SpawnOn(cClientHandle & a_Client)
 
 bool cMonster::TickPathFinding(cChunk & a_Chunk)
 {
-	if (!m_IsFollowingPath)
+	if (!m_PathfinderActivated)
 	{
 		return false;
-	}
-	if (m_TicksSinceLastPathReset < 1000)
-	{
-		// No need to count beyond 1000. 1000 is arbitary here.
-		++m_TicksSinceLastPathReset;
 	}
 
 	if (ReachedFinalDestination())
 	{
 		StopMovingToPosition();
 		return false;
-	}
-
-	if ((m_FinalDestination - m_PathFinderDestination).Length() > 0.25)  // if the distance between where we're going and where we should go is too big.
-	{
-		/* If we reached the last path waypoint,
-		Or if we haven't re-calculated for too long.
-		Interval is proportional to distance squared, and its minimum is 10.
-		(Recalculate lots when close, calculate rarely when far) */
-		if (
-			((GetPosition() - m_PathFinderDestination).Length() < 0.25) ||
-			((m_TicksSinceLastPathReset > 10) && (m_TicksSinceLastPathReset > (0.4 * (m_FinalDestination - GetPosition()).SqrLength())))
-		)
-		{
-			/* Re-calculating is expensive when there's no path to target, and it results in mobs freezing very often as a result of always recalculating.
-			This is a workaround till we get better path recalculation. */
-			if (!m_NoPathToTarget)
-			{
-				ResetPathFinding();
-			}
-		}
 	}
 
 	if (m_Path == nullptr)
@@ -166,21 +142,17 @@ bool cMonster::TickPathFinding(cChunk & a_Chunk)
 			StopMovingToPosition();  // Invalid chunks, probably world is loading or something, cancel movement.
 			return false;
 		}
-		m_NoPathToTarget = false;
-		m_NoMoreWayPoints = false;
-		m_PathFinderDestination = m_FinalDestination;
-		m_Path = new cPath(a_Chunk, GetPosition(), m_PathFinderDestination, 20, GetWidth(), GetHeight());
+		m_GiveUpCounter = 40;
+		m_Path = new cPath(a_Chunk, GetPosition(), m_FinalDestination, 20, GetWidth(), GetHeight());
 	}
 
 	switch (m_Path->Step(a_Chunk))
 	{
 		case ePathFinderStatus::NEARBY_FOUND:
 		{
-			m_NoPathToTarget = true;
-			m_PathFinderDestination = m_Path->AcceptNearbyPath();
+			m_FinalDestination = m_Path->AcceptNearbyPath();
 			break;
 		}
-
 		case ePathFinderStatus::PATH_NOT_FOUND:
 		{
 			StopMovingToPosition();  // Try to calculate a path again.
@@ -194,9 +166,10 @@ bool cMonster::TickPathFinding(cChunk & a_Chunk)
 		}
 		case ePathFinderStatus::PATH_FOUND:
 		{
-			if (m_NoMoreWayPoints || (--m_GiveUpCounter == 0))
+			if ((--m_GiveUpCounter) == 0)
 			{
-				if (m_EMState == ATTACKING)
+				// Failed to reach a waypoint - that's a failure condition whichever point we're at
+				if (m_EMState == CHASING)
 				{
 					ResetPathFinding();  // Try to calculate a path again.
 					// This results in mobs hanging around an unreachable target (player).
@@ -215,10 +188,8 @@ bool cMonster::TickPathFinding(cChunk & a_Chunk)
 					m_GiveUpCounter = 40;  // Give up after 40 ticks (2 seconds) if failed to reach m_NextWayPointPosition.
 				}
 			}
-			else
-			{
-				m_NoMoreWayPoints = true;
-			}
+
+			m_IsFollowingPath = true;
 			return true;
 		}
 	}
@@ -237,7 +208,7 @@ void cMonster::MoveToWayPoint(cChunk & a_Chunk)
 		if (DoesPosYRequireJump(FloorC(m_NextWayPointPosition.y)))
 		{
 			if (
-				(IsOnGround() && (GetSpeedX() == 0) && (GetSpeedY() == 0)) ||
+				(IsOnGround() && (GetSpeedX() == 0.0f) && (GetSpeedY() == 0.0f)) ||
 				(IsSwimming() && (m_GiveUpCounter < 15))
 			)
 			{
@@ -256,7 +227,7 @@ void cMonster::MoveToWayPoint(cChunk & a_Chunk)
 	}
 
 	Vector3d Distance = m_NextWayPointPosition - GetPosition();
-	if ((Distance.x != 0) || (Distance.z != 0))
+	if ((Distance.x != 0.0f) || (Distance.z != 0.0f))
 	{
 		Distance.y = 0;
 		Distance.Normalize();
@@ -388,8 +359,8 @@ bool cMonster::EnsureProperDestination(cChunk & a_Chunk)
 
 void cMonster::MoveToPosition(const Vector3d & a_Position)
 {
-		m_FinalDestination = a_Position;
-		m_IsFollowingPath = true;
+	m_FinalDestination = a_Position;
+	m_PathfinderActivated = true;
 }
 
 
@@ -398,7 +369,7 @@ void cMonster::MoveToPosition(const Vector3d & a_Position)
 
 void cMonster::StopMovingToPosition()
 {
-	m_IsFollowingPath = false;
+	m_PathfinderActivated = false;
 	ResetPathFinding();
 }
 
@@ -408,7 +379,7 @@ void cMonster::StopMovingToPosition()
 
 void cMonster::ResetPathFinding(void)
 {
-	m_TicksSinceLastPathReset = 0;
+	m_IsFollowingPath = false;
 	if (m_Path != nullptr)
 	{
 		delete m_Path;
@@ -580,9 +551,9 @@ int cMonster::FindFirstNonAirBlockPosition(double a_PosX, double a_PosZ)
 	int PosY = POSY_TOINT;
 	PosY = Clamp(PosY, 0, cChunkDef::Height);
 
-	if (!cBlockInfo::IsSolid(m_World->GetBlock((int)floor(a_PosX), PosY, (int)floor(a_PosZ))))
+	if (!cBlockInfo::IsSolid(m_World->GetBlock(FloorC(a_PosX), PosY, FloorC(a_PosZ))))
 	{
-		while (!cBlockInfo::IsSolid(m_World->GetBlock((int)floor(a_PosX), PosY, (int)floor(a_PosZ))) && (PosY > 0))
+		while (!cBlockInfo::IsSolid(m_World->GetBlock(FloorC(a_PosX), PosY, FloorC(a_PosZ))) && (PosY > 0))
 		{
 			PosY--;
 		}
@@ -591,7 +562,7 @@ int cMonster::FindFirstNonAirBlockPosition(double a_PosX, double a_PosZ)
 	}
 	else
 	{
-		while ((PosY < cChunkDef::Height) && cBlockInfo::IsSolid(m_World->GetBlock((int)floor(a_PosX), PosY, (int)floor(a_PosZ))))
+		while ((PosY < cChunkDef::Height) && cBlockInfo::IsSolid(m_World->GetBlock(static_cast<int>(floor(a_PosX)), PosY, static_cast<int>(floor(a_PosZ)))))
 		{
 			PosY++;
 		}
@@ -731,7 +702,7 @@ void cMonster::OnRightClicked(cPlayer & a_Player)
 void cMonster::CheckEventSeePlayer(void)
 {
 	// TODO: Rewrite this to use cWorld's DoWithPlayers()
-	cPlayer * Closest = m_World->FindClosestPlayer(GetPosition(), (float)m_SightDistance, false);
+	cPlayer * Closest = m_World->FindClosestPlayer(GetPosition(), static_cast<float>(m_SightDistance), false);
 
 	if (Closest != nullptr)
 	{
@@ -799,8 +770,8 @@ void cMonster::InStateIdle(std::chrono::milliseconds a_Dt)
 		m_IdleInterval -= std::chrono::seconds(1);  // So nothing gets dropped when the server hangs for a few seconds
 
 		Vector3d Dist;
-		Dist.x = (double)m_World->GetTickRandomNumber(10) - 5;
-		Dist.z = (double)m_World->GetTickRandomNumber(10) - 5;
+		Dist.x = static_cast<double>(m_World->GetTickRandomNumber(10)) - 5.0;
+		Dist.z = static_cast<double>(m_World->GetTickRandomNumber(10)) - 5.0;
 
 		if ((Dist.SqrLength() > 2)  && (rem >= 3))
 		{
@@ -1067,15 +1038,15 @@ cMonster * cMonster::NewMonsterFromType(eMonsterType a_MobType)
 				VillagerType = 0;
 			}
 
-			toReturn = new cVillager((cVillager::eVillagerType)VillagerType);
+			toReturn = new cVillager(static_cast<cVillager::eVillagerType>(VillagerType));
 			break;
 		}
 		case mtHorse:
 		{
 			// Horses take a type (species), a colour, and a style (dots, stripes, etc.)
-			int HorseType = Random.NextInt(7);
-			int HorseColor = Random.NextInt(6);
-			int HorseStyle = Random.NextInt(6);
+			int HorseType = Random.NextInt(8);
+			int HorseColor = Random.NextInt(7);
+			int HorseStyle = Random.NextInt(5);
 			int HorseTameTimes = Random.NextInt(6) + 1;
 
 			if ((HorseType == 5) || (HorseType == 6) || (HorseType == 7))
@@ -1129,10 +1100,10 @@ cMonster * cMonster::NewMonsterFromType(eMonsterType a_MobType)
 void cMonster::AddRandomDropItem(cItems & a_Drops, unsigned int a_Min, unsigned int a_Max, short a_Item, short a_ItemHealth)
 {
 	MTRand r1;
-	int Count = r1.randInt() % (a_Max + 1 - a_Min) + a_Min;
+	int Count = static_cast<int>(static_cast<unsigned int>(r1.randInt()) % (a_Max + 1 - a_Min) + a_Min);
 	if (Count > 0)
 	{
-		a_Drops.push_back(cItem(a_Item, Count, a_ItemHealth));
+		a_Drops.push_back(cItem(a_Item, static_cast<char>(Count), a_ItemHealth));
 	}
 }
 
@@ -1157,10 +1128,10 @@ void cMonster::AddRandomUncommonDropItem(cItems & a_Drops, float a_Chance, short
 void cMonster::AddRandomRareDropItem(cItems & a_Drops, cItems & a_Items, unsigned int a_LootingLevel)
 {
 	MTRand r1;
-	unsigned int Count = r1.randInt() % 200;
+	unsigned int Count = static_cast<unsigned int>(static_cast<unsigned long>(r1.randInt()) % 200);
 	if (Count < (5 + a_LootingLevel))
 	{
-		int Rare = r1.randInt() % a_Items.Size();
+		size_t Rare = static_cast<size_t>(r1.randInt()) % a_Items.Size();
 		a_Drops.push_back(a_Items.at(Rare));
 	}
 }

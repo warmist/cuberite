@@ -317,7 +317,7 @@ bool cRCONServer::cConnection::ProcessPacket(UInt32 a_RequestID, UInt32 a_Packet
 UInt32 cRCONServer::cConnection::UIntFromBuffer(const char * a_Buffer)
 {
 	const Byte * Buffer = reinterpret_cast<const Byte *>(a_Buffer);
-	return (Buffer[3] << 24) | (Buffer[2] << 16) | (Buffer[1] << 8) | Buffer[0];
+	return static_cast<UInt32>((Buffer[3] << 24) | (Buffer[2] << 16) | (Buffer[1] << 8) | Buffer[0]);
 }
 
 
@@ -336,7 +336,6 @@ void cRCONServer::cConnection::UIntToBuffer(UInt32 a_Value, char * a_Buffer)
 
 
 
-/// Sends a RCON packet back to the client
 void cRCONServer::cConnection::SendResponse(UInt32 a_RequestID, UInt32 a_PacketType, UInt32 a_PayloadLength, const char * a_Payload)
 {
 	ASSERT((a_PayloadLength == 0) || (a_Payload != nullptr));  // Either zero data to send, or a valid payload ptr

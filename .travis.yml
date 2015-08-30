@@ -1,3 +1,4 @@
+
 language: cpp
 compiler: gcc
 
@@ -16,6 +17,8 @@ script: ./CIbuild.sh
 env:
   global:
     - secure: "P0mU9OsE0Nbk4550oYovbbqNHCIjXkW6qOYhNkVZ8anhINuUvU2Vtb9ceLZPhhuEWxG/A+N3uzrsv5I65judOs/EsN01j9NqG8rAmd38cUmYCNLHE84yDu6upMby0hQt+2OuF1cb329IWedI8J93FxOBCenQwKsKedVwYq6rf9E="
+    # hack for coverity
+    - TRAVIS_REPO_SLUG: "mc-server/MCServer"
   matrix:
     - TRAVIS_MCSERVER_BUILD_TYPE=RELEASE MCSERVER_PATH=./MCServer
 
@@ -28,7 +31,7 @@ notifications:
 addons:
   coverity_scan:
     project:
-      name: "mc-server/MCServer"
+      name: mc-server/MCServer
       description: "Your project description here"
     notification_email: work.tycho@gmail.com
     build_command_prepend: cov-configure --comptype gcc --compiler $CC && cmake . -DBUILD_TOOLS=1 -DSELF_TEST=1

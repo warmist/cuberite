@@ -62,7 +62,7 @@ enum ENUM_BLOCK_ID  // tolua_export
 	E_BLOCK_TORCH = 50,
 	E_BLOCK_FIRE = 51,
 	E_BLOCK_MOB_SPAWNER = 52,
-	E_BLOCK_WOODEN_STAIRS = 53,
+	E_BLOCK_OAK_WOOD_STAIRS = 53,
 	E_BLOCK_CHEST = 54,
 	E_BLOCK_REDSTONE_WIRE = 55,
 	E_BLOCK_DIAMOND_ORE = 56,
@@ -75,7 +75,7 @@ enum ENUM_BLOCK_ID  // tolua_export
 	E_BLOCK_LIT_FURNACE = 62,
 	E_BLOCK_BURNING_FURNACE = 62,
 	E_BLOCK_SIGN_POST = 63,
-	E_BLOCK_WOODEN_DOOR = 64,
+	E_BLOCK_OAK_DOOR = 64,
 	E_BLOCK_LADDER = 65,
 	E_BLOCK_RAIL = 66,
 	E_BLOCK_MINECART_TRACKS = 66,
@@ -120,7 +120,7 @@ enum ENUM_BLOCK_ID  // tolua_export
 	E_BLOCK_PUMPKIN_STEM = 104,
 	E_BLOCK_MELON_STEM = 105,
 	E_BLOCK_VINES = 106,
-	E_BLOCK_FENCE_GATE = 107,
+	E_BLOCK_OAK_FENCE_GATE = 107,
 	E_BLOCK_BRICK_STAIRS = 108,
 	E_BLOCK_STONE_BRICK_STAIRS = 109,
 	E_BLOCK_MYCELIUM = 110,
@@ -197,8 +197,8 @@ enum ENUM_BLOCK_ID  // tolua_export
 	E_BLOCK_INVERTED_DAYLIGHT_SENSOR = 178,
 	E_BLOCK_RED_SANDSTONE = 179,
 	E_BLOCK_RED_SANDSTONE_STAIRS = 180,
-	E_BLOCK_DOUBLE_NEW_STONE_SLAB= 181,
-	E_BLOCK_NEW_STONE_SLAB = 182,
+	E_BLOCK_DOUBLE_RED_SANDSTONE_SLAB = 181,
+	E_BLOCK_RED_SANDSTONE_SLAB = 182,
 	E_BLOCK_SPRUCE_FENCE_GATE = 183,
 	E_BLOCK_BIRCH_FENCE_GATE = 184,
 	E_BLOCK_JUNGLE_FENCE_GATE = 185,
@@ -223,7 +223,9 @@ enum ENUM_BLOCK_ID  // tolua_export
 	// Synonym or ID compatibility
 	E_BLOCK_YELLOW_FLOWER = E_BLOCK_DANDELION,
 	E_BLOCK_RED_ROSE = E_BLOCK_FLOWER,
-	E_BLOCK_LOCKED_CHEST = E_BLOCK_STAINED_GLASS,
+	E_BLOCK_WOODEN_DOOR = E_BLOCK_OAK_DOOR,
+	E_BLOCK_FENCE_GATE = E_BLOCK_OAK_FENCE_GATE,
+	E_BLOCK_WOODEN_STAIRS = E_BLOCK_OAK_WOOD_STAIRS,
 };
 // tolua_end
 
@@ -612,8 +614,8 @@ enum
 	E_META_PISTON_EXTENDED    = 8,
 
 	// E_BLOCK_PLANKS metas:
-	E_META_PLANKS_APPLE    = 0,
-	E_META_PLANKS_CONIFER  = 1,
+	E_META_PLANKS_OAK      = 0,
+	E_META_PLANKS_SPRUCE   = 1,
 	E_META_PLANKS_BIRCH    = 2,
 	E_META_PLANKS_JUNGLE   = 3,
 	E_META_PLANKS_ACACIA   = 4,
@@ -814,16 +816,16 @@ enum
 	E_META_NEWLOG_DARK_OAK_BARK_ONLY = 13,
 
 	// E_BLOCK_WOODEN_DOUBLE_SLAB metas:
-	E_META_WOODEN_DOUBLE_SLAB_APPLE    = 0,
-	E_META_WOODEN_DOUBLE_SLAB_CONIFER  = 1,
+	E_META_WOODEN_DOUBLE_SLAB_OAK      = 0,
+	E_META_WOODEN_DOUBLE_SLAB_SPRUCE   = 1,
 	E_META_WOODEN_DOUBLE_SLAB_BIRCH    = 2,
 	E_META_WOODEN_DOUBLE_SLAB_JUNGLE   = 3,
 	E_META_WOODEN_DOUBLE_SLAB_ACACIA   = 4,
 	E_META_WOODEN_DOUBLE_SLAB_DARK_OAK = 5,
 	
 	// E_BLOCK_WOODEN_SLAB metas:
-	E_META_WOODEN_SLAB_APPLE         = 0,
-	E_META_WOODEN_SLAB_CONIFER       = 1,
+	E_META_WOODEN_SLAB_OAK           = 0,
+	E_META_WOODEN_SLAB_SPRUCE        = 1,
 	E_META_WOODEN_SLAB_BIRCH         = 2,
 	E_META_WOODEN_SLAB_JUNGLE        = 3,
 	E_META_WOODEN_SLAB_ACACIA        = 4,
@@ -980,7 +982,7 @@ enum
 
 
 
-/// Dimension of a world
+/** Dimension of a world */
 enum eDimension
 {
 	dimNether    = -1,
@@ -993,7 +995,7 @@ enum eDimension
 
 
 
-/// Damage type, used in the TakeDamageInfo structure and related functions
+/** Damage type, used in the TakeDamageInfo structure and related functions */
 enum eDamageType
 {
 	// Canonical names for the types (as documented in the plugin wiki):
@@ -1097,36 +1099,35 @@ class cIniFile;
 
 // tolua_begin
 
-/// Translates a blocktype string into blocktype. Takes either a number or an items.ini alias as input. Returns -1 on failure.
+/** Translates a blocktype string into blocktype. Takes either a number or an items.ini alias as input. Returns -1 on failure. */
 extern int BlockStringToType(const AString & a_BlockTypeString);
 
-/// Translates an itemtype string into an item. Takes either a number, number^number, number:number or an items.ini alias as input. Returns true if successful.
+/** Translates an itemtype string into an item. Takes either a number, number^number, number:number or an items.ini alias as input. Returns true if successful. */
 extern bool StringToItem(const AString & a_ItemTypeString, cItem & a_Item);
 
-/// Translates a full item into a string. If the ItemType is not recognized, the ItemType number is output into the string.
+/** Translates a full item into a string. If the ItemType is not recognized, the ItemType number is output into the string. */
 extern AString ItemToString(const cItem & a_Item);
 
-/// Translates itemtype into a string. If the type is not recognized, the itemtype number is output into the string.
+/** Translates itemtype into a string. If the type is not recognized, the itemtype number is output into the string. */
 extern AString ItemTypeToString(short a_ItemType);
 
-/// Translates a full item into a fully-specified string (including meta and count). If the ItemType is not recognized, the ItemType number is output into the string.
+/** Translates a full item into a fully-specified string (including meta and count). If the ItemType is not recognized, the ItemType number is output into the string. */
 extern AString ItemToFullString(const cItem & a_Item);
 
-/// Translates a dimension string to dimension enum. Takes either a number or a dimension alias (built-in). Returns dimOverworld on failure
+/** Translates a dimension string to dimension enum. Takes either a number or a dimension alias (built-in). Returns dimOverworld on failure */
 extern eDimension StringToDimension(const AString & a_DimensionString);
 
 /** Translates a dimension enum to dimension string.
-Takes an eDimension enum value and returns "Overworld" on failure
-*/
+Takes an eDimension enum value and returns "Overworld" on failure. */
 extern AString DimensionToString(eDimension a_Dimension);
 
-/// Translates damage type constant to a string representation (built-in).
+/** Translates damage type constant to a string representation (built-in). */
 extern AString DamageTypeToString(eDamageType a_DamageType);
 
-/// Translates a damage type string to damage type. Takes either a number or a damage type alias (built-in). Returns -1 on failure
+/** Translates a damage type string to damage type. Takes either a number or a damage type alias (built-in). Returns -1 on failure */
 extern eDamageType StringToDamageType(const AString & a_DamageString);
 
-/// Returns a cItem representing the item described in an IniFile's value; if the value doesn't exist, creates it with the provided default.
+/** Returns a cItem representing the item described in an IniFile's value; if the value doesn't exist, creates it with the provided default. */
 extern cItem GetIniItemSet(cIniFile & a_IniFile, const char * a_Section, const char * a_Key, const char * a_Default);
 
 // tolua_end

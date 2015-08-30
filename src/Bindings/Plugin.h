@@ -42,7 +42,7 @@ public:
 	// Called each tick
 	virtual void Tick(float a_Dt) = 0;
 
-	/** Calls the specified hook with the params given. Returns the bool that the hook callback returns.*/
+	/** Calls the specified hook with the params given. Returns the bool that the hook callback returns. */
 	virtual bool OnBlockSpread              (cWorld & a_World, int a_BlockX, int a_BlockY, int a_BlockZ, eSpreadSource a_Source) = 0;
 	virtual bool OnBlockToPickups           (cWorld & a_World, cEntity * a_Digger, int a_BlockX, int a_BlockY, int a_BlockZ, BLOCKTYPE a_BlockType, NIBBLETYPE a_BlockMeta, cItems & a_Pickups) = 0;
 	virtual bool OnChat                     (cPlayer & a_Player, AString & a_Message) = 0;
@@ -66,7 +66,7 @@ public:
 	virtual bool OnHopperPushingItem        (cWorld & a_World, cHopperEntity & a_Hopper, int a_SrcSlotNum, cBlockEntityWithItems & a_DstEntity, int a_DstSlotNum) = 0;
 	virtual bool OnKilled                   (cEntity & a_Victim, TakeDamageInfo & a_TDI, AString & a_DeathMessage) = 0;
 	virtual bool OnKilling                  (cEntity & a_Victim, cEntity * a_Killer, TakeDamageInfo & a_TDI) = 0;
-	virtual bool OnLogin                    (cClientHandle & a_Client, int a_ProtocolVersion, const AString & a_Username) = 0;
+	virtual bool OnLogin                    (cClientHandle & a_Client, UInt32 a_ProtocolVersion, const AString & a_Username) = 0;
 	virtual bool OnPlayerAnimation          (cPlayer & a_Player, int a_Animation) = 0;
 	virtual bool OnPlayerBreakingBlock      (cPlayer & a_Player, int a_BlockX, int a_BlockY, int a_BlockZ, char a_BlockFace, BLOCKTYPE a_BlockType, NIBBLETYPE a_BlockMeta) = 0;
 	virtual bool OnPlayerBrokenBlock        (cPlayer & a_Player, int a_BlockX, int a_BlockY, int a_BlockZ, char a_BlockFace, BLOCKTYPE a_BlockType, NIBBLETYPE a_BlockMeta) = 0;

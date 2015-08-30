@@ -41,42 +41,37 @@ public:
 		return true;
 	}
 
-
 	virtual void OnPlaced(cChunkInterface & a_ChunkInterface, cWorldInterface & a_WorldInterface, int a_BlockX, int a_BlockY, int a_BlockZ, BLOCKTYPE a_BlockType, NIBBLETYPE a_BlockMeta) override
 	{
 		super::OnPlaced(a_ChunkInterface, a_WorldInterface, a_BlockX, a_BlockY, a_BlockZ, a_BlockType, a_BlockMeta);
 
 		// Alert diagonal rails
-		OnNeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY + 1, a_BlockZ);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY + 1, a_BlockZ);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ + 1);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ - 1);
-
-		OnNeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY - 1, a_BlockZ);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY - 1, a_BlockZ);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ + 1);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ - 1);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY + 1, a_BlockZ, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY + 1, a_BlockZ, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ + 1, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ - 1, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY - 1, a_BlockZ, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY - 1, a_BlockZ, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ + 1, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ - 1, BLOCK_FACE_NONE);
 	}
-
 
 	virtual void OnDestroyed(cChunkInterface & a_ChunkInterface, cWorldInterface & a_WorldInterface, int a_BlockX, int a_BlockY, int a_BlockZ) override
 	{
 		super::OnDestroyed(a_ChunkInterface, a_WorldInterface, a_BlockX, a_BlockY, a_BlockZ);
 
 		// Alert diagonal rails
-		OnNeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY + 1, a_BlockZ);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY + 1, a_BlockZ);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ + 1);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ - 1);
-
-		OnNeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY - 1, a_BlockZ);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY - 1, a_BlockZ);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ + 1);
-		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ - 1);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY + 1, a_BlockZ, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY + 1, a_BlockZ, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ + 1, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ - 1, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY - 1, a_BlockZ, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY - 1, a_BlockZ, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ + 1, BLOCK_FACE_NONE);
+		OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ - 1, BLOCK_FACE_NONE);
 	}
 
-
-	virtual void OnNeighborChanged(cChunkInterface & a_ChunkInterface, int a_BlockX, int a_BlockY, int a_BlockZ) override
+	virtual void OnNeighborChanged(cChunkInterface & a_ChunkInterface, int a_BlockX, int a_BlockY, int a_BlockZ, eBlockFace a_WhichNeighbor) override
 	{
 		NIBBLETYPE Meta = a_ChunkInterface.GetBlockMeta(a_BlockX, a_BlockY, a_BlockZ);
 		if (IsUnstable(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ) && (Meta != FindMeta(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ)))
@@ -85,13 +80,11 @@ public:
 		}
 	}
 
-
 	virtual void ConvertToPickups(cItems & a_Pickups, NIBBLETYPE a_BlockMeta) override
 	{
 		super::ConvertToPickups(a_Pickups, 0);
 	}
-
-
+	
 	virtual bool CanBeAt(cChunkInterface & a_ChunkInterface, int a_RelX, int a_RelY, int a_RelZ, const cChunk & a_Chunk) override
 	{
 		if (a_RelY <= 0)
@@ -260,12 +253,10 @@ public:
 		return Meta;
 	}
 
-
 	inline bool CanThisRailCurve(void)
 	{
 		return m_BlockType == E_BLOCK_RAIL;
 	}
-
 
 	bool IsUnstable(cChunkInterface & a_ChunkInterface, int a_BlockX, int a_BlockY, int a_BlockZ)
 	{
@@ -399,7 +390,6 @@ public:
 		return false;
 	}
 
-
 	bool IsNotConnected(cChunkInterface  & a_ChunkInterface, int a_BlockX, int a_BlockY, int a_BlockZ, eBlockFace a_BlockFace, char a_Pure = 0)
 	{
 		AddFaceDirection(a_BlockX, a_BlockY, a_BlockZ, a_BlockFace, false);
@@ -497,7 +487,6 @@ public:
 		return true;
 	}
 
-
 	virtual NIBBLETYPE MetaRotateCCW(NIBBLETYPE a_Meta) override
 	{
 		// Bit 0x08 is a flag when a_Meta is in the range 0x00--0x05 and 0x0A--0x0F.
@@ -534,7 +523,6 @@ public:
 		return a_Meta;
 	}
 
-
 	virtual NIBBLETYPE MetaRotateCW(NIBBLETYPE a_Meta) override
 	{
 		// Bit 0x08 is a flag for value in the range 0x00--0x05 and specifies direction for values withint 0x006--0x09.
@@ -570,7 +558,6 @@ public:
 		return a_Meta;
 	}
 
-
 	virtual NIBBLETYPE MetaMirrorXY(NIBBLETYPE a_Meta) override
 	{
 		// Bit 0x08 is a flag for value in the range 0x00--0x05 and specifies direction for values withint 0x006--0x09.
@@ -601,7 +588,6 @@ public:
 		return a_Meta;
 	}
 
-
 	virtual NIBBLETYPE MetaMirrorYZ(NIBBLETYPE a_Meta) override
 	{
 		// Bit 0x08 is a flag for value in the range 0x00--0x05 and specifies direction for values withint 0x006--0x09.
@@ -630,6 +616,12 @@ public:
 		}
 		// To avoid a compiler warning;
 		return a_Meta;
+	}
+
+	virtual ColourID GetMapBaseColourID(NIBBLETYPE a_Meta) override
+	{
+		UNUSED(a_Meta);
+		return 0;
 	}
 } ;
 

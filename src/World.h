@@ -103,8 +103,12 @@ public:
 	class cTask
 	{
 	public:
+		cTask(const cTask & other) = default;
 		virtual ~cTask() {}
 		virtual void Run(cWorld & a_World) = 0;
+
+	protected:
+		cTask() {}
 	} ;
 	
 	typedef SharedPtr<cTask> cTaskPtr;
@@ -140,6 +144,21 @@ public:
 		virtual void Run(cWorld & a_World) override;
 
 		std::vector<Vector3i> m_SendQueue;
+	};
+
+	class cTaskLambda :
+		public cTask
+	{
+
+	public:
+		cTaskLambda(std::function<void(cWorld&)> a_Func) :
+			m_func(a_Func)
+		{ }
+
+	protected:
+		virtual void Run(cWorld & a_World) override;
+
+		std::function<void(cWorld&)> m_func;
 	};
 
 
@@ -231,7 +250,6 @@ public:
 	void BroadcastChat       (const cCompositeChat & a_Message, const cClientHandle * a_Exclude = nullptr);
 	// tolua_end
 
-	void BroadcastChunkData                  (int a_ChunkX, int a_ChunkZ, cChunkDataSerializer & a_Serializer, const cClientHandle * a_Exclude = nullptr);
 	void BroadcastCollectEntity              (const cEntity & a_Pickup, const cPlayer & a_Player, const cClientHandle * a_Exclude = nullptr);
 	void BroadcastDestroyEntity              (const cEntity & a_Entity, const cClientHandle * a_Exclude = nullptr);
 	void BroadcastEntityEffect               (const cEntity & a_Entity, int a_EffectID, int a_Amplifier, short a_Duration, const cClientHandle * a_Exclude = nullptr);
@@ -298,7 +316,7 @@ public:
 
 	bool HasChunkAnyClients(int a_ChunkX, int a_ChunkZ) const;
 	
-	/** Queues a task to unload unused chunks onto the tick thread. The prefferred way of unloading*/
+	/** Queues a task to unload unused chunks onto the tick thread. The prefferred way of unloading. */
 	void QueueUnloadUnusedChunks(void);  // tolua_export
 	
 	void CollectPickupsByPlayer(cPlayer & a_Player);
@@ -466,6 +484,7 @@ public:
 	BLOCKTYPE  GetBlock    (const Vector3i & a_Pos) { return GetBlock( a_Pos.x, a_Pos.y, a_Pos.z); }
 	NIBBLETYPE GetBlockMeta(const Vector3i & a_Pos) { return GetBlockMeta( a_Pos.x, a_Pos.y, a_Pos.z); }
 	void       SetBlockMeta(const Vector3i & a_Pos, NIBBLETYPE a_MetaData) { SetBlockMeta( a_Pos.x, a_Pos.y, a_Pos.z, a_MetaData); }
+	NIBBLETYPE GetBlockBlockLight(const Vector3i & a_Pos) { return GetBlockBlockLight( a_Pos.x, a_Pos.y, a_Pos.z); }
 	// tolua_end
 	
 	/** Writes the block area into the specified coords.
@@ -609,8 +628,10 @@ public:
 	
 	/** Calls the callback for the chunk specified, with ChunkMapCS locked; returns false if the chunk doesn't exist, otherwise returns the same value as the callback */
 	bool DoWithChunk(int a_ChunkX, int a_ChunkZ, cChunkCallback & a_Callback);
+	bool DoWithChunk(int a_ChunkX, int a_ChunkZ, std::function<bool(cChunk &)> a_Callback);
 
-	/** Calls the callback for the chunk at the block position specified, with ChunkMapCS locked; returns false if the chunk doesn't exist, otherwise returns the same value as the callback **/
+	/** Calls the callback for the chunk at the block position specified, with ChunkMapCS locked.
+	Returns false if the chunk isn't loaded, otherwise returns the same value as the callback */
 	bool DoWithChunkAt(Vector3i a_BlockPos, std::function<bool(cChunk &)> a_Callback);
 
 	void GrowTreeImage(const sSetBlockVector & a_Blocks);
@@ -694,6 +715,18 @@ public:
 	AString GetLinkedOverworldName(void) const { return m_LinkedOverworldName; }
 	void SetLinkedOverworldName(const AString & a_Name) { m_LinkedOverworldName = a_Name; }
 	
+	/** Returns or sets the minumim or maximum netherportal width */
+	virtual int GetMinNetherPortalWidth(void) const override { return m_MinNetherPortalWidth; }
+	virtual int GetMaxNetherPortalWidth(void) const override { return m_MaxNetherPortalWidth; }
+	virtual void SetMinNetherPortalWidth(int a_NewMinWidth) override { m_MinNetherPortalWidth = a_NewMinWidth; }
+	virtual void SetMaxNetherPortalWidth(int a_NewMaxWidth) override { m_MaxNetherPortalWidth = a_NewMaxWidth; }
+
+	/** Returns or sets the minumim or maximum netherportal height */
+	virtual int GetMinNetherPortalHeight(void) const override { return m_MinNetherPortalHeight; }
+	virtual int GetMaxNetherPortalHeight(void) const override { return m_MaxNetherPortalHeight; }
+	virtual void SetMinNetherPortalHeight(int a_NewMinHeight) override { m_MinNetherPortalHeight = a_NewMinHeight; }
+	virtual void SetMaxNetherPortalHeight(int a_NewMaxHeight) override { m_MaxNetherPortalHeight = a_NewMaxHeight; }
+
 	// tolua_end
 	
 	/** Saves all chunks immediately. Dangerous interface, may deadlock, use QueueSaveAllChunks() instead */
@@ -705,6 +738,9 @@ public:
 	/** Queues a task onto the tick thread. The task object will be deleted once the task is finished */
 	void QueueTask(cTaskPtr a_Task);  // Exported in ManualBindings.cpp
 	
+	/** Queues a lambda task onto the tick thread, with the specified delay. */
+	void ScheduleTask(int a_DelayTicks, std::function<void(cWorld&)> a_Func);
+
 	/** Queues a task onto the tick thread, with the specified delay. */
 	void ScheduleTask(int a_DelayTicks, cTaskPtr a_Task);
 
@@ -808,7 +844,7 @@ public:
 	bool IsBlockDirectlyWatered(int a_BlockX, int a_BlockY, int a_BlockZ);  // tolua_export
 	
 	/** Spawns a mob of the specified type. Returns the mob's UniqueID if recognized and spawned, cEntity::INVALID_ID otherwise */
-	virtual UInt32 SpawnMob(double a_PosX, double a_PosY, double a_PosZ, eMonsterType a_MonsterType) override;  // tolua_export
+	virtual UInt32 SpawnMob(double a_PosX, double a_PosY, double a_PosZ, eMonsterType a_MonsterType, bool a_Baby = false) override;  // tolua_export
 
 	UInt32 SpawnMobFinalize(cMonster * a_Monster);
 	
@@ -919,6 +955,12 @@ private:
 	double m_SpawnX;
 	double m_SpawnY;
 	double m_SpawnZ;
+
+	// Variables defining the minimum and maximum size for a nether portal
+	int m_MinNetherPortalWidth;
+	int m_MaxNetherPortalWidth;
+	int m_MinNetherPortalHeight;
+	int m_MaxNetherPortalHeight;
 
 	bool m_BroadcastDeathMessages;
 	bool m_BroadcastAchievementMessages;
@@ -1079,24 +1121,24 @@ private:
 	/** Ticks all clients that are in this world */
 	void TickClients(float a_Dt);
 
-	/** Unloads all chunks immediately.*/
+	/** Unloads all chunks immediately. */
 	void UnloadUnusedChunks(void);
 
 	void UpdateSkyDarkness(void);
 
-	/** <summary>Generates a random spawnpoint on solid land by walking chunks and finding their biomes</summary> */
+	/** Generates a random spawnpoint on solid land by walking chunks and finding their biomes */
 	void GenerateRandomSpawn(void);
 
-	/** Check if player starting point is acceptable **/
+	/** Check if player starting point is acceptable */
 	bool CheckPlayerSpawnPoint(int a_PosX, int a_PosY, int a_PosZ);
 
-	/** Chooses a reasonable transition from the current weather to a new weather **/
+	/** Chooses a reasonable transition from the current weather to a new weather */
 	eWeather ChooseNewWeather(void);
 
 	/** Creates a new fluid simulator, loads its settings from the inifile (a_FluidName section) */
 	cFluidSimulator * InitializeFluidSimulator(cIniFile & a_IniFile, const char * a_FluidName, BLOCKTYPE a_SimulateBlock, BLOCKTYPE a_StationaryBlock);
 
-	/** Creates a new redstone simulator.*/
+	/** Creates a new redstone simulator. */
 	cRedstoneSimulator * InitializeRedstoneSimulator(cIniFile & a_IniFile);
 
 	/** Adds the players queued in the m_PlayersToAdd queue into the m_Players list.

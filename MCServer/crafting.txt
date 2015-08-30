@@ -71,13 +71,13 @@ LapisBlock              = LapisLazuli, 1:1, 1:2, 1:3, 2:1, 2:2, 2:3, 3:1, 3:2, 3
 EmeraldBlock            = Emerald,     1:1, 1:2, 1:3, 2:1, 2:2, 2:3, 3:1, 3:2, 3:3
 RedstoneBlock           = RedstoneDust,    1:1, 1:2, 1:3, 2:1, 2:2, 2:3, 3:1, 3:2, 3:3
 CoalBlock               = Coal, 1:1, 1:2, 1:3, 2:1, 2:2, 2:3, 3:1, 3:2, 3:3
-QuartzBlock             = NetherQuartz, 1:1, 1:2, 1:3, 2:1, 2:2, 2:3, 3:1, 3:2, 3:3
+QuartzBlock             = NetherQuartz, 1:1, 1:2, 2:1, 2:2
 NetherBrick             = netherbrickitem, 1:1, 1:2, 2:1, 2:2
 Glowstone               = GlowstoneDust, 1:1, 1:2, 2:1, 2:2
 Wool                    = String,    1:1, 1:2, 2:1, 2:2
 TNT                     = Gunpowder, 1:1, 3:1, 2:2, 1:3, 3:3 | Sand, 2:1, 1:2, 3:2, 2:3
-PillarQuartzBlock       = QuartzSlab, 1:1, 1:2
-ChiseledQuartzBlock, 2  = QuartzBlock, 1:1, 1:2
+PillarQuartzBlock, 2    = QuartzBlock, 1:1, 1:2
+ChiseledQuartzBlock     = QuartzSlab, 1:1, 1:2
 HayBale                 = Wheat, 1:1, 1:2, 1:3, 2:1, 2:2, 2:3, 3:1, 3:2, 3:3
 SnowBlock               = SnowBall,  1:1, 1:2, 2:1, 2:2
 ClayBlock               = Clay,      1:1, 1:2, 2:1, 2:2
@@ -475,7 +475,7 @@ PurpleCarpet, 3    = PurpleWool, 1:1, 2:1
 BlueCarpet, 3      = BlueWool, 1:1, 2:1
 BrownCarpet, 3     = BrownWool, 1:1, 2:1
 GreenCarpet, 3     = GreenWool, 1:1, 2:1
-RedCarpet, 3       = RedWool, 1:1, 2:2
+RedCarpet, 3       = RedWool, 1:1, 2:1
 BlackCarpet, 3     = BlackWool, 1:1, 2:1
 WhiteCarpet, 3     = WhiteWool, 1:1, 2:1
 
@@ -552,6 +552,44 @@ GlisteringMelon    = MelonSlice, 2:2  | GoldNugget, 1:1, 1:2, 1:3, 2:1, 2:3, 3:1
 GoldNugget, 9      = GoldIngot, *
 EnchantmentTable   = Obsidian, 1:3, 2:3, 3:3, 2:2 | Diamond, 1:2, 3:2 | Book, 2:1
 
+#******************************************************#
+# Dyed Armor 
+# Do not modify
+LeatherHelmet		= LeatherHelmet^-1, * | Dye^-1, *
+LeatherHelmet		= LeatherHelmet^-1, * | Dye^-1, * | Dye^-1, *
+LeatherHelmet		= LeatherHelmet^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherHelmet		= LeatherHelmet^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherHelmet		= LeatherHelmet^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherHelmet		= LeatherHelmet^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherHelmet		= LeatherHelmet^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherHelmet		= LeatherHelmet^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+
+LeatherChestplate		= LeatherChestplate^-1, * | Dye^-1, *
+LeatherChestplate		= LeatherChestplate^-1, * | Dye^-1, * | Dye^-1, *
+LeatherChestplate		= LeatherChestplate^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherChestplate		= LeatherChestplate^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherChestplate		= LeatherChestplate^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherChestplate		= LeatherChestplate^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherChestplate		= LeatherChestplate^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherChestplate		= LeatherChestplate^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+
+LeatherPants		= LeatherPants^-1, * | Dye^-1, *
+LeatherPants		= LeatherPants^-1, * | Dye^-1, * | Dye^-1, *
+LeatherPants		= LeatherPants^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherPants		= LeatherPants^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherPants		= LeatherPants^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherPants		= LeatherPants^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherPants		= LeatherPants^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherPants		= LeatherPants^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+
+LeatherBoots		= LeatherBoots^-1, * | Dye^-1, *
+LeatherBoots		= LeatherBoots^-1, * | Dye^-1, * | Dye^-1, *
+LeatherBoots		= LeatherBoots^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherBoots		= LeatherBoots^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherBoots		= LeatherBoots^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherBoots		= LeatherBoots^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherBoots		= LeatherBoots^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
+LeatherBoots		= LeatherBoots^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, * | Dye^-1, *
 
 #******************************************************#
 # Fireworks & Co.

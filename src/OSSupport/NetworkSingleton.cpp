@@ -18,8 +18,36 @@
 
 
 
-cNetworkSingleton::cNetworkSingleton(void):
-	m_HasTerminated(false)
+cNetworkSingleton::cNetworkSingleton() :
+	m_HasTerminated(true)
+{
+}
+
+
+
+
+
+cNetworkSingleton::~cNetworkSingleton()
+{
+	// Check that Terminate has been called already:
+	ASSERT(m_HasTerminated);
+}
+
+
+
+
+
+cNetworkSingleton & cNetworkSingleton::Get(void)
+{
+	static cNetworkSingleton Instance;
+	return Instance;
+}
+
+
+
+
+
+void cNetworkSingleton::Initialise(void)
 {
 	// Windows: initialize networking:
 	#ifdef _WIN32
@@ -64,26 +92,7 @@ cNetworkSingleton::cNetworkSingleton(void):
 
 	// Create the event loop thread:
 	m_EventLoopThread = std::thread(RunEventLoop, this);
-}
-
-
-
-
-
-cNetworkSingleton::~cNetworkSingleton()
-{
-	// Check that Terminate has been called already:
-	ASSERT(m_HasTerminated);
-}
-
-
-
-
-
-cNetworkSingleton & cNetworkSingleton::Get(void)
-{
-	static cNetworkSingleton Instance;
-	return Instance;
+	m_HasTerminated = false;
 }
 
 
@@ -93,7 +102,6 @@ cNetworkSingleton & cNetworkSingleton::Get(void)
 void cNetworkSingleton::Terminate(void)
 {
 	ASSERT(!m_HasTerminated);
-	m_HasTerminated = true;
 
 	// Wait for the LibEvent event loop to terminate:
 	event_base_loopbreak(m_EventBase);
@@ -113,6 +121,10 @@ void cNetworkSingleton::Terminate(void)
 	event_base_free(m_EventBase);
 
 	libevent_global_shutdown();
+
+	// Set the HasTerminated flag:
+	// (Only set the flag after everything has been removed, to avoid the random failures in the Google-test, caused by links terminating after this flag was set)
+	m_HasTerminated = true;
 }
 
 

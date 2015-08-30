@@ -71,12 +71,11 @@ private:
 		bool ShouldPowerOn;  // What happens when the delay time is fulfilled?
 	};
 
+	/** Per-chunk data for the simulator, specified individual chunks to simulate */
 	class cIncrementalRedstoneSimulatorChunkData :
 		public cRedstoneSimulatorChunkData
 	{
 	public:
-		/// Per-chunk data for the simulator, specified individual chunks to simulate
-
 		/** test */
 		std::unordered_map<Vector3i, std::pair<BLOCKTYPE, bool>, VectorHasher<int>> m_ChunkData;
 		std::vector<sPoweredBlocks> m_PoweredBlocks;
@@ -241,7 +240,7 @@ private:
 	The only diffence between this and a normal AreCoordsPowered is that this function checks for a wire powering another wire */
 	static unsigned char IsWirePowered(Vector3i a_RelBlockPosition, cChunk * a_Chunk);
 
-	/** Handles delayed updates to repeaters **/
+	/** Handles delayed updates to repeaters */
 	void HandleRedstoneRepeaterDelays(void);
 
 	/** Returns if lever metadata marks it as emitting power */
@@ -272,7 +271,7 @@ private:
 			case E_BLOCK_DARK_OAK_FENCE_GATE:
 			case E_BLOCK_DISPENSER:
 			case E_BLOCK_DROPPER:
-			case E_BLOCK_FENCE_GATE:
+			case E_BLOCK_OAK_FENCE_GATE:
 			case E_BLOCK_HOPPER:
 			case E_BLOCK_INACTIVE_COMPARATOR:
 			case E_BLOCK_IRON_DOOR:
@@ -292,7 +291,7 @@ private:
 			case E_BLOCK_STICKY_PISTON:
 			case E_BLOCK_TNT:
 			case E_BLOCK_TRAPDOOR:
-			case E_BLOCK_WOODEN_DOOR:
+			case E_BLOCK_OAK_DOOR:
 			{
 				return true;
 			}
@@ -348,7 +347,7 @@ private:
 			case E_BLOCK_DETECTOR_RAIL:
 			case E_BLOCK_DISPENSER:
 			case E_BLOCK_DROPPER:
-			case E_BLOCK_FENCE_GATE:
+			case E_BLOCK_OAK_FENCE_GATE:
 			case E_BLOCK_HEAVY_WEIGHTED_PRESSURE_PLATE:
 			case E_BLOCK_HOPPER:
 			case E_BLOCK_INACTIVE_COMPARATOR:
@@ -378,7 +377,7 @@ private:
 			case E_BLOCK_TRIPWIRE_HOOK:
 			case E_BLOCK_TRIPWIRE:
 			case E_BLOCK_WOODEN_BUTTON:
-			case E_BLOCK_WOODEN_DOOR:
+			case E_BLOCK_OAK_DOOR:
 			case E_BLOCK_WOODEN_PRESSURE_PLATE:
 			case E_BLOCK_PISTON:
 			{
@@ -395,7 +394,7 @@ private:
 			case E_BLOCK_ACACIA_FENCE_GATE:
 			case E_BLOCK_BIRCH_FENCE_GATE:
 			case E_BLOCK_DARK_OAK_FENCE_GATE:
-			case E_BLOCK_FENCE_GATE:
+			case E_BLOCK_OAK_FENCE_GATE:
 			case E_BLOCK_JUNGLE_FENCE_GATE:
 			case E_BLOCK_SPRUCE_FENCE_GATE:
 			case E_BLOCK_IRON_TRAPDOOR:

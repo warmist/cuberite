@@ -16,13 +16,11 @@ public:
 		cBlockEntityHandler(a_BlockType)
 	{
 	}
-	
 
 	virtual void ConvertToPickups(cItems & a_Pickups, NIBBLETYPE a_BlockMeta) override
 	{
 		// The drop spawn is in the OnDestroyedByPlayer method
 	}
-	
 
 	virtual void OnDestroyedByPlayer(cChunkInterface & a_ChunkInterface, cWorldInterface & a_WorldInterface, cPlayer * a_Player, int a_BlockX, int a_BlockY, int a_BlockZ) override
 	{
@@ -43,7 +41,7 @@ public:
 				cMobHeadEntity * MobHeadEntity = static_cast<cMobHeadEntity*>(a_BlockEntity);
 				
 				cItems Pickups;
-				Pickups.Add(E_ITEM_HEAD, 1, (short) MobHeadEntity->GetType());
+				Pickups.Add(E_ITEM_HEAD, 1, static_cast<short>(MobHeadEntity->GetType()));
 				MTRand r1;
 
 				// Mid-block position first
@@ -62,6 +60,12 @@ public:
 		} Callback;
 		
 		a_WorldInterface.DoWithBlockEntityAt(a_BlockX, a_BlockY, a_BlockZ, Callback);
+	}
+
+	virtual ColourID GetMapBaseColourID(NIBBLETYPE a_Meta) override
+	{
+		UNUSED(a_Meta);
+		return 0;
 	}
 } ;
 

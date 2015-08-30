@@ -82,15 +82,21 @@ public:
 	static void ExtendPiston(int a_BlockX, int a_BlockY, int a_BlockZ, cWorld * a_World);
 	static void RetractPiston(int a_BlockX, int a_BlockY, int a_BlockZ, cWorld * a_World);
 
+	virtual ColourID GetMapBaseColourID(NIBBLETYPE a_Meta) override
+	{
+		UNUSED(a_Meta);
+		return 11;
+	}
+
 private:
 
-	/// Returns true if the piston (specified by blocktype) is a sticky piston
+	/** Returns true if the piston (specified by blocktype) is a sticky piston */
 	static inline bool IsSticky(BLOCKTYPE a_BlockType) { return (a_BlockType == E_BLOCK_STICKY_PISTON); }
 
-	/// Returns true if the piston (with the specified meta) is extended
+	/** Returns true if the piston (with the specified meta) is extended */
 	static inline bool IsExtended(NIBBLETYPE a_PistonMeta) { return ((a_PistonMeta & 0x8) != 0x0); }
 
-	/// Returns true if the specified block can be pushed by a piston (and left intact)
+	/** Returns true if the specified block can be pushed by a piston (and left intact) */
 	static inline bool CanPush(BLOCKTYPE a_BlockType, NIBBLETYPE a_BlockMeta)
 	{
 		switch (a_BlockType)
@@ -135,7 +141,7 @@ private:
 		return true;
 	}
 
-	/// Returns true if the specified block can be pulled by a sticky piston
+	/** Returns true if the specified block can be pulled by a sticky piston */
 	static inline bool CanPull(BLOCKTYPE a_BlockType, NIBBLETYPE a_BlockMeta)
 	{
 		if (cBlockInfo::IsPistonBreakable(a_BlockType))
@@ -146,7 +152,7 @@ private:
 		return CanPush(a_BlockType, a_BlockMeta);
 	}
 
-	/// Returns how many blocks the piston has to push (where the first free space is); < 0 when unpushable
+	/** Returns how many blocks the piston has to push (where the first free space is); < 0 when unpushable */
 	static int FirstPassthroughBlock(int a_PistonX, int a_PistonY, int a_PistonZ, NIBBLETYPE a_PistonMeta, cWorld * a_World);
 } ;
 

@@ -49,6 +49,7 @@
 #include "BlockMobSpawner.h"
 #include "BlockMushroom.h"
 #include "BlockMycelium.h"
+#include "BlockNetherrack.h"
 #include "BlockNetherWart.h"
 #include "BlockOre.h"
 #include "BlockPiston.h"
@@ -215,7 +216,7 @@ cBlockHandler * cBlockHandler::CreateBlockHandler(BLOCKTYPE a_BlockType)
 		case E_BLOCK_DIAMOND_ORE:           return new cBlockOreHandler             (a_BlockType);
 		case E_BLOCK_DIRT:                  return new cBlockDirtHandler            (a_BlockType);
 		case E_BLOCK_DISPENSER:             return new cBlockDropSpenserHandler     (a_BlockType);
-		case E_BLOCK_DOUBLE_NEW_STONE_SLAB: return new cBlockDoubleSlabHandler      (a_BlockType);
+		case E_BLOCK_DOUBLE_RED_SANDSTONE_SLAB: return new cBlockDoubleSlabHandler      (a_BlockType);
 		case E_BLOCK_DOUBLE_STONE_SLAB:     return new cBlockDoubleSlabHandler      (a_BlockType);
 		case E_BLOCK_DOUBLE_WOODEN_SLAB:    return new cBlockDoubleSlabHandler      (a_BlockType);
 		case E_BLOCK_DROPPER:               return new cBlockDropSpenserHandler     (a_BlockType);
@@ -223,7 +224,7 @@ cBlockHandler * cBlockHandler::CreateBlockHandler(BLOCKTYPE a_BlockType)
 		case E_BLOCK_ENCHANTMENT_TABLE:     return new cBlockEnchantmentTableHandler(a_BlockType);
 		case E_BLOCK_ENDER_CHEST:           return new cBlockEnderchestHandler      (a_BlockType);
 		case E_BLOCK_FARMLAND:              return new cBlockFarmlandHandler        (a_BlockType);
-		case E_BLOCK_FENCE_GATE:            return new cBlockFenceGateHandler       (a_BlockType);
+		case E_BLOCK_OAK_FENCE_GATE:            return new cBlockFenceGateHandler       (a_BlockType);
 		case E_BLOCK_FIRE:                  return new cBlockFireHandler            (a_BlockType);
 		case E_BLOCK_FLOWER_POT:            return new cBlockFlowerPotHandler       (a_BlockType);
 		case E_BLOCK_FURNACE:               return new cBlockFurnaceHandler         (a_BlockType);
@@ -263,10 +264,11 @@ cBlockHandler * cBlockHandler::CreateBlockHandler(BLOCKTYPE a_BlockType)
 		case E_BLOCK_NETHER_BRICK_STAIRS:   return new cBlockStairsHandler          (a_BlockType);
 		case E_BLOCK_NETHER_PORTAL:         return new cBlockPortalHandler          (a_BlockType);
 		case E_BLOCK_NETHER_WART:           return new cBlockNetherWartHandler      (a_BlockType);
+		case E_BLOCK_NETHERRACK:            return new cBlockNetherrack             (a_BlockType);
 		case E_BLOCK_NETHER_QUARTZ_ORE:     return new cBlockOreHandler             (a_BlockType);
 		case E_BLOCK_NEW_LEAVES:            return new cBlockLeavesHandler          (a_BlockType);
 		case E_BLOCK_NEW_LOG:               return new cBlockSidewaysHandler        (a_BlockType);
-		case E_BLOCK_NEW_STONE_SLAB:        return new cBlockSlabHandler            (a_BlockType);
+		case E_BLOCK_RED_SANDSTONE_SLAB:    return new cBlockSlabHandler            (a_BlockType);
 		case E_BLOCK_NOTE_BLOCK:            return new cBlockEntityHandler          (a_BlockType);
 		case E_BLOCK_PISTON:                return new cBlockPistonHandler          (a_BlockType);
 		case E_BLOCK_PISTON_EXTENSION:      return new cBlockPistonHeadHandler;
@@ -320,10 +322,10 @@ cBlockHandler * cBlockHandler::CreateBlockHandler(BLOCKTYPE a_BlockType)
 		case E_BLOCK_WALLSIGN:              return new cBlockWallSignHandler        (a_BlockType);
 		case E_BLOCK_WATER:                 return new cBlockFluidHandler           (a_BlockType);
 		case E_BLOCK_WOODEN_BUTTON:         return new cBlockButtonHandler          (a_BlockType);
-		case E_BLOCK_WOODEN_DOOR:           return new cBlockDoorHandler            (a_BlockType);
+		case E_BLOCK_OAK_DOOR:              return new cBlockDoorHandler            (a_BlockType);
 		case E_BLOCK_WOODEN_PRESSURE_PLATE: return new cBlockPressurePlateHandler   (a_BlockType);
 		case E_BLOCK_WOODEN_SLAB:           return new cBlockSlabHandler            (a_BlockType);
-		case E_BLOCK_WOODEN_STAIRS:         return new cBlockStairsHandler          (a_BlockType);
+		case E_BLOCK_OAK_WOOD_STAIRS:       return new cBlockStairsHandler          (a_BlockType);
 		case E_BLOCK_WOOL:                  return new cBlockClothHandler           (a_BlockType);
 		case E_BLOCK_WORKBENCH:             return new cBlockWorkbenchHandler       (a_BlockType);
 		case E_BLOCK_YELLOW_FLOWER:         return new cBlockFlowerHandler          (a_BlockType);
@@ -389,12 +391,12 @@ void cBlockHandler::OnDestroyedByPlayer(cChunkInterface & a_ChunkInterface, cWor
 void cBlockHandler::OnPlaced(cChunkInterface & a_ChunkInterface, cWorldInterface & a_WorldInterface, int a_BlockX, int a_BlockY, int a_BlockZ, BLOCKTYPE a_BlockType, NIBBLETYPE a_BlockMeta)
 {
 	// Notify the neighbors
-	NeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY, a_BlockZ);
-	NeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY, a_BlockZ);
-	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ);
-	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ);
-	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ - 1);
-	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ + 1);
+	NeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY, a_BlockZ, BLOCK_FACE_XP);
+	NeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY, a_BlockZ, BLOCK_FACE_XM);
+	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ, BLOCK_FACE_YP);
+	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ, BLOCK_FACE_YM);
+	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ - 1, BLOCK_FACE_ZP);
+	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ + 1, BLOCK_FACE_ZM);
 }
 
 
@@ -404,23 +406,23 @@ void cBlockHandler::OnPlaced(cChunkInterface & a_ChunkInterface, cWorldInterface
 void cBlockHandler::OnDestroyed(cChunkInterface & a_ChunkInterface, cWorldInterface & a_WorldInterface, int a_BlockX, int a_BlockY, int a_BlockZ)
 {
 	// Notify the neighbors
-	NeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY, a_BlockZ);
-	NeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY, a_BlockZ);
-	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ);
-	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ);
-	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ - 1);
-	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ + 1);
+	NeighborChanged(a_ChunkInterface, a_BlockX - 1, a_BlockY, a_BlockZ, BLOCK_FACE_XP);
+	NeighborChanged(a_ChunkInterface, a_BlockX + 1, a_BlockY, a_BlockZ, BLOCK_FACE_XM);
+	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY - 1, a_BlockZ, BLOCK_FACE_YP);
+	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY + 1, a_BlockZ, BLOCK_FACE_YM);
+	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ - 1, BLOCK_FACE_ZP);
+	NeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ + 1, BLOCK_FACE_ZM);
 }
 
 
 
 
 
-void cBlockHandler::NeighborChanged(cChunkInterface & a_ChunkInterface, int a_BlockX, int a_BlockY, int a_BlockZ)
+void cBlockHandler::NeighborChanged(cChunkInterface & a_ChunkInterface, int a_NeighborX, int a_NeighborY, int a_NeighborZ, eBlockFace a_WhichNeighbor)
 {
-	if ((a_BlockY >= 0) && (a_BlockY < cChunkDef::Height))
+	if ((a_NeighborY >= 0) && (a_NeighborY < cChunkDef::Height))
 	{
-		cBlockInfo::GetHandler(a_ChunkInterface.GetBlock(a_BlockX, a_BlockY, a_BlockZ))->OnNeighborChanged(a_ChunkInterface, a_BlockX, a_BlockY, a_BlockZ);
+		cBlockInfo::GetHandler(a_ChunkInterface.GetBlock(a_NeighborX, a_NeighborY, a_NeighborZ))->OnNeighborChanged(a_ChunkInterface, a_NeighborX, a_NeighborY, a_NeighborZ, a_WhichNeighbor);
 	}
 }
 
@@ -513,15 +515,6 @@ bool cBlockHandler::CanBeAt(cChunkInterface & a_ChunkInterface, int a_BlockX, in
 
 
 
-bool cBlockHandler::CanDirtGrowGrass(NIBBLETYPE a_Meta)
-{
-	return ((cBlockInfo::IsTransparent(m_BlockType)) || (cBlockInfo::IsOneHitDig(m_BlockType)));
-}
-
-
-
-
-
 bool cBlockHandler::IsUseable()
 {
 	return false;
@@ -578,6 +571,16 @@ void cBlockHandler::Check(cChunkInterface & a_ChunkInterface, cBlockPluginInterf
 		int BlockZ = a_RelZ + a_Chunk.GetPosZ() * cChunkDef::Width;
 		a_Chunk.GetWorld()->GetSimulatorManager()->WakeUp(BlockX, a_RelY, BlockZ, &a_Chunk);
 	}
+}
+
+
+
+
+
+ColourID cBlockHandler::GetMapBaseColourID(NIBBLETYPE a_Meta)
+{
+	// Zero for transparent
+	return 0;
 }
 
 
