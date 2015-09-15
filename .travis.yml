@@ -20,7 +20,7 @@ env:
     # hack for coverity
     - TRAVIS_REPO_SLUG: "mc-server/MCServer"
   matrix:
-    - TRAVIS_MCSERVER_BUILD_TYPE=RELEASE MCSERVER_PATH=./MCServer
+    - TRAVIS_CUBERITE_BUILD_TYPE=RELEASE CUBERITE_PATH=./Cuberite
 
 # Notification Settings
 notifications:
