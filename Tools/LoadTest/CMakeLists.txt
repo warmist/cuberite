@@ -15,6 +15,7 @@ set (Network_SRCS
 	../../src/OSSupport/TCPLinkImpl.cpp
 	../../src/StringUtils.cpp
 	../../src/ByteBuffer.cpp
+	../../src/FastRandom.cpp
 )
 
 set (Network_HDRS
