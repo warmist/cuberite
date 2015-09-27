@@ -14,8 +14,19 @@ fi
 cmake . -DBUILD_TOOLS=1 -DSELF_TEST=1;
 make -j 2;
 make -j 2 test ARGS="-V";
+
+echo "Testing..."
 cd Server/;
 if [ "$TRAVIS_CUBERITE_BUILD_TYPE" != "COVERAGE" ]; then
-	echo restart | $CUBERITE_PATH;
-	echo stop | $CUBERITE_PATH;
+	$CUBERITE_PATH << EOF
+load APIDump
+apicheck
+restart
+stop
+EOF
+	if [ -f ./NewlyUndocumented.lua ]; then
+		echo "ERROR: Newly undocumented API symbols found:"
+		cat ./NewlyUndocumented.lua
+		exit 1
+	fi
 fi

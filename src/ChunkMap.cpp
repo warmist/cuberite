@@ -1723,7 +1723,7 @@ void cChunkMap::AddEntity(cEntity * a_Entity)
 	)
 	{
 		LOGWARNING("Entity at %p (%s, ID %d) spawning in a non-existent chunk, the entity is lost.",
-			a_Entity, a_Entity->GetClass(), a_Entity->GetUniqueID()
+			static_cast<void *>(a_Entity), a_Entity->GetClass(), a_Entity->GetUniqueID()
 		);
 		return;
 	}
@@ -1744,7 +1744,7 @@ void cChunkMap::AddEntityIfNotPresent(cEntity * a_Entity)
 	)
 	{
 		LOGWARNING("Entity at %p (%s, ID %d) spawning in a non-existent chunk, the entity is lost.",
-			a_Entity, a_Entity->GetClass(), a_Entity->GetUniqueID()
+			static_cast<void *>(a_Entity), a_Entity->GetClass(), a_Entity->GetUniqueID()
 		);
 		return;
 	}
@@ -2570,6 +2570,34 @@ bool cChunkMap::ForEachChunkInRect(int a_MinChunkX, int a_MaxChunkX, int a_MinCh
 		}
 	}
 	return Result;
+}
+
+
+
+
+
+bool cChunkMap::ForEachLoadedChunk(std::function<bool(int, int)> a_Callback)
+{
+	cCSLock Lock(m_CSLayers);
+	for (cChunkLayerList::const_iterator itr = m_Layers.begin(); itr != m_Layers.end(); ++itr)  // iterate over ALL loaded layers
+	{
+		cChunkLayer * layer = *itr;
+		for (int x = 0; x < LAYER_SIZE; x++)
+		{
+			for (int z = 0; z < LAYER_SIZE; z++)
+			{
+				cChunkPtr p = layer->FindChunk(layer->GetX() * LAYER_SIZE + x, layer->GetZ() * LAYER_SIZE + z);
+				if ((p != nullptr) && p->IsValid())  // if chunk is loaded
+				{
+					if (a_Callback(p->GetPosX(), p->GetPosZ()))
+					{
+						return false;
+					}
+				}
+			}
+		}
+	}
+	return true;
 }
 
 

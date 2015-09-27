@@ -27,7 +27,7 @@
 #include "Blocks/BroadcastInterface.h"
 #include "FastRandom.h"
 #include "ClientHandle.h"
-
+#include <functional>
 
 
 
@@ -96,71 +96,7 @@ public:
 		typedef cCSLock super;
 	public:
 		cLock(cWorld & a_World);
-	} ;
-
-	
-	/** A common ancestor for all tasks queued onto the tick thread */
-	class cTask
-	{
-	public:
-		cTask(const cTask & other) = default;
-		virtual ~cTask() {}
-		virtual void Run(cWorld & a_World) = 0;
-
-	protected:
-		cTask() {}
-	} ;
-	
-	typedef SharedPtr<cTask> cTaskPtr;
-	typedef std::vector<cTaskPtr> cTasks;
-
-	
-	class cTaskSaveAllChunks :
-		public cTask
-	{
-	protected:
-		// cTask overrides:
-		virtual void Run(cWorld & a_World) override;
-	} ;
-	
-
-	class cTaskUnloadUnusedChunks :
-		public cTask
-	{
-	protected:
-		// cTask overrides:
-		virtual void Run(cWorld & a_World) override;
 	};
-
-
-	class cTaskSendBlockToAllPlayers :
-		public cTask
-	{
-	public:
-		cTaskSendBlockToAllPlayers(std::vector<Vector3i> & a_SendQueue);
-
-	protected:
-		// cTask overrides:
-		virtual void Run(cWorld & a_World) override;
-
-		std::vector<Vector3i> m_SendQueue;
-	};
-
-	class cTaskLambda :
-		public cTask
-	{
-
-	public:
-		cTaskLambda(std::function<void(cWorld&)> a_Func) :
-			m_func(a_Func)
-		{ }
-
-	protected:
-		virtual void Run(cWorld & a_World) override;
-
-		std::function<void(cWorld&)> m_func;
-	};
-
 
 	static const char * GetClassStatic(void)  // Needed for ManualBindings's ForEach templates
 	{
@@ -434,6 +370,9 @@ public:
 	/** Calls the callback for each chunk in the coords specified (all cords are inclusive). Returns true if all chunks have been processed successfully */
 	virtual bool ForEachChunkInRect(int a_MinChunkX, int a_MaxChunkX, int a_MinChunkZ, int a_MaxChunkZ, cChunkDataCallback & a_Callback) override;
 
+	/** Calls the callback for each loaded chunk. Returns true if all chunks have been processed successfully */
+	bool ForEachLoadedChunk(std::function<bool(int, int)> a_Callback);
+	
 	// tolua_begin
 	
 	/** Sets the block at the specified coords to the specified value.
@@ -736,13 +675,10 @@ public:
 	void QueueSaveAllChunks(void);  // tolua_export
 	
 	/** Queues a task onto the tick thread. The task object will be deleted once the task is finished */
-	void QueueTask(cTaskPtr a_Task);  // Exported in ManualBindings.cpp
+	void QueueTask(std::function<void(cWorld &)> a_Task);  // Exported in ManualBindings.cpp
 	
 	/** Queues a lambda task onto the tick thread, with the specified delay. */
-	void ScheduleTask(int a_DelayTicks, std::function<void(cWorld&)> a_Func);
-
-	/** Queues a task onto the tick thread, with the specified delay. */
-	void ScheduleTask(int a_DelayTicks, cTaskPtr a_Task);
+	void ScheduleTask(int a_DelayTicks, std::function<void(cWorld &)> a_Task);
 
 	/** Returns the number of chunks loaded	 */
 	int GetNumChunks() const;  // tolua_export
@@ -909,27 +845,6 @@ private:
 	public:
 		cChunkGeneratorCallbacks(cWorld & a_World);
 	} ;
-	
-
-	/** A container for tasks that have been scheduled for a specific game tick */
-	class cScheduledTask
-	{
-	public:
-		Int64 m_TargetTick;
-		cTaskPtr m_Task;
-		
-		/** Creates a new scheduled task; takes ownership of the task object passed to it. */
-		cScheduledTask(Int64 a_TargetTick, cTaskPtr a_Task) :
-			m_TargetTick(a_TargetTick),
-			m_Task(a_Task)
-		{
-		}
-		
-		virtual ~cScheduledTask() {}
-	};
-
-	typedef std::unique_ptr<cScheduledTask> cScheduledTaskPtr;
-	typedef std::list<cScheduledTaskPtr> cScheduledTasks;
 
 
 	AString m_WorldName;
@@ -1059,16 +974,8 @@ private:
 	/** Guards the m_Tasks */
 	cCriticalSection m_CSTasks;
 	
-	/** Tasks that have been queued onto the tick thread; guarded by m_CSTasks */
-	cTasks m_Tasks;
-	
-	/** Guards the m_ScheduledTasks */
-	cCriticalSection m_CSScheduledTasks;
-	
-	/** Tasks that have been queued to be executed on the tick thread at target tick in the future.
-	Ordered by increasing m_TargetTick.
-	Guarded by m_CSScheduledTasks */
-	cScheduledTasks m_ScheduledTasks;
+	/** Tasks that have been queued onto the tick thread, possibly to be executed at target tick in the future; guarded by m_CSTasks */
+	std::vector<std::pair<Int64, std::function<void(cWorld &)>>> m_Tasks;
 	
 	/** Guards m_Clients */
 	cCriticalSection  m_CSClients;
@@ -1114,9 +1021,6 @@ private:
 	
 	/** Executes all tasks queued onto the tick thread */
 	void TickQueuedTasks(void);
-	
-	/** Executes all tasks queued onto the tick thread */
-	void TickScheduledTasks(void);
 	
 	/** Ticks all clients that are in this world */
 	void TickClients(float a_Dt);

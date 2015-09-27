@@ -164,10 +164,9 @@ git submodule update --init
 
 # Cmake.
 echo " --- Running cmake..."
-popd
 if [ ! -d build-cuberite ]; then mkdir build-cuberite; fi
 pushd build-cuberite
-cmake ../cuberite/ -DCMAKE_BUILD_TYPE=$BUILDTYPE || error "cmake failed"
+cmake .. -DCMAKE_BUILD_TYPE=$BUILDTYPE || error "cmake failed"
 
 
 # Make.
@@ -177,17 +176,22 @@ echo
 
 
 # Echo: Compilation complete.
-popd
-pushd cuberite/MCServer
+popd > /dev/null
+pushd Server > /dev/null
 echo
 echo "-----------------"
 echo "Compilation done!"
 echo
 echo "Cuberite awaits you at:"
-echo "`pwd`/MCServer"
+if [[ $BUILDTYPE == "Debug" ]]; then
+echo "`pwd`/Cuberite_debug"
+else
+echo "`pwd`/Cuberite"
+fi
 echo
 echo "Enjoy :)"
-popd
+popd > /dev/null
+popd > /dev/null
 exit 0
 
 :windows_detected

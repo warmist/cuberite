@@ -109,6 +109,20 @@ cProtocol180::cProtocol180(cClientHandle * a_Client, const AString & a_ServerAdd
 	m_IsEncrypted(false),
 	m_LastSentDimension(dimNotSet)
 {
+
+	// BungeeCord handling:
+	// If BC is setup with ip_forward == true, it sends additional data in the login packet's ServerAddress field:
+	// hostname\00ip-address\00uuid\00profile-properties-as-json
+	AStringVector Params;
+	if (cRoot::Get()->GetServer()->ShouldAllowBungeeCord() && SplitZeroTerminatedStrings(a_ServerAddress, Params) && (Params.size() == 4))
+	{
+		LOGD("Player at %s connected via BungeeCord", Params[1].c_str());
+		m_ServerAddress = Params[0];
+		m_Client->SetIPString(Params[1]);
+		m_Client->SetUUID(cMojangAPI::MakeUUIDShort(Params[2]));
+		m_Client->SetProperties(Params[3]);
+	}
+
 	// Create the comm log file, if so requested:
 	if (g_ShouldLogCommIn || g_ShouldLogCommOut)
 	{
@@ -232,84 +246,28 @@ void cProtocol180::SendBlockChanges(int a_ChunkX, int a_ChunkZ, const sSetBlockV
 
 
 
-void cProtocol180::SendChat(const AString & a_Message)
-{
-	this->SendChatType(a_Message, ctChatBox);
-}
-
-
-
-
-
-void cProtocol180::SendChat(const cCompositeChat & a_Message)
-{
-	this->SendChatType(a_Message, ctChatBox);
-}
-
-
-
-
-
-void cProtocol180::SendChatSystem(const AString & a_Message)
-{
-	this->SendChatType(a_Message, ctSystem);
-}
-
-
-
-
-
-void cProtocol180::SendChatSystem(const cCompositeChat & a_Message)
-{
-	this->SendChatType(a_Message, ctSystem);
-}
-
-
-
-
-
-void cProtocol180::SendChatAboveActionBar(const AString & a_Message)
-{
-	this->SendChatType(a_Message, ctAboveActionBar);
-}
-
-
-
-
-
-void cProtocol180::SendChatAboveActionBar(const cCompositeChat & a_Message)
-{
-	this->SendChatType(a_Message, ctAboveActionBar);
-}
-
-
-
-
-
-void cProtocol180::SendChatType(const AString & a_Message, eChatType type)
+void cProtocol180::SendChat(const AString & a_Message, eChatType a_Type)
 {
 	ASSERT(m_State == 3);  // In game mode?
 	
 	cPacketizer Pkt(*this, 0x02);  // Chat Message packet
 	Pkt.WriteString(Printf("{\"text\":\"%s\"}", EscapeString(a_Message).c_str()));
-	Pkt.WriteBEInt8(type);
+	Pkt.WriteBEInt8(a_Type);
 }
 
 
 
 
 
-void cProtocol180::SendChatType(const cCompositeChat & a_Message, eChatType type)
+void cProtocol180::SendChat(const cCompositeChat & a_Message, eChatType a_Type, bool a_ShouldUseChatPrefixes)
 {
 	ASSERT(m_State == 3);  // In game mode?
 
-	cWorld * World = m_Client->GetPlayer()->GetWorld();
-	bool ShouldUseChatPrefixes = (World == nullptr) ? false : World->ShouldUseChatPrefixes();
 
 	// Send the message to the client:
 	cPacketizer Pkt(*this, 0x02);
-	Pkt.WriteString(a_Message.CreateJsonString(ShouldUseChatPrefixes));
-	Pkt.WriteBEInt8(type);
+	Pkt.WriteString(a_Message.CreateJsonString(a_ShouldUseChatPrefixes));
+	Pkt.WriteBEInt8(a_Type);
 }
 
 
@@ -2122,7 +2080,7 @@ void cProtocol180::HandlePacketStatusRequest(cByteBuffer & a_ByteBuffer)
 
 	// Version:
 	Json::Value Version;
-	Version["name"] = "MCServer 1.8";
+	Version["name"] = "Cuberite 1.8";
 	Version["protocol"] = 47;
 
 	// Players:
@@ -2727,7 +2685,7 @@ void cProtocol180::HandleVanillaPluginMessage(cByteBuffer & a_ByteBuffer, const 
 		HANDLE_READ(a_ByteBuffer, ReadVarUTF8String, AString, Brand);
 		m_Client->SetClientBrand(Brand);
 		// Send back our brand, including the length:
-		SendPluginMessage("MC|Brand", "\x08MCServer");
+		SendPluginMessage("MC|Brand", "\x08Cuberite");
 		return;
 	}
 	else if (a_Channel == "MC|Beacon")

@@ -245,65 +245,11 @@ void cProtocol172::SendBlockChanges(int a_ChunkX, int a_ChunkZ, const sSetBlockV
 
 
 
-void cProtocol172::SendChat(const AString & a_Message)
-{
-	this->SendChatType(a_Message, ctChatBox);
-}
-
-
-
-
-
-void cProtocol172::SendChat(const cCompositeChat & a_Message)
-{
-	this->SendChatType(a_Message, ctChatBox);
-}
-
-
-
-
-
-void cProtocol172::SendChatSystem(const AString & a_Message)
-{
-	this->SendChatType(a_Message, ctSystem);
-}
-
-
-
-
-
-void cProtocol172::SendChatSystem(const cCompositeChat & a_Message)
-{
-	this->SendChatType(a_Message, ctSystem);
-}
-
-
-
-
-
-void cProtocol172::SendChatAboveActionBar(const AString & a_Message)
-{
-	this->SendChatType(a_Message, ctAboveActionBar);
-}
-
-
-
-
-
-void cProtocol172::SendChatAboveActionBar(const cCompositeChat & a_Message)
-{
-	this->SendChatType(a_Message, ctAboveActionBar);
-}
-
-
-
-
-
-void cProtocol172::SendChatType(const AString & a_Message, eChatType type)
+void cProtocol172::SendChat(const AString & a_Message, eChatType a_Type)
 {
 	ASSERT(m_State == 3);  // In game mode?
 
-	if (type != ctChatBox)  // 1.7.2 doesn't support anything else
+	if (a_Type != ctChatBox)  // 1.7.2 doesn't support anything else
 	{
 		return;
 	}
@@ -316,21 +262,18 @@ void cProtocol172::SendChatType(const AString & a_Message, eChatType type)
 
 
 
-void cProtocol172::SendChatType(const cCompositeChat & a_Message, eChatType type)
+void cProtocol172::SendChat(const cCompositeChat & a_Message, eChatType a_Type, bool a_ShouldUseChatPrefixes)
 {
 	ASSERT(m_State == 3);  // In game mode?
 
-	if (type != ctChatBox)  // 1.7.2 doesn't support anything else
+	if (a_Type != ctChatBox)  // 1.7.2 doesn't support anything else
 	{
 		return;
 	}
 
-	cWorld * World = m_Client->GetPlayer()->GetWorld();
-	bool ShouldUseChatPrefixes = (World == nullptr) ? false : World->ShouldUseChatPrefixes();
-
 	// Send the message to the client:
 	cPacketizer Pkt(*this, 0x02);
-	Pkt.WriteString(a_Message.CreateJsonString(ShouldUseChatPrefixes));
+	Pkt.WriteString(a_Message.CreateJsonString(a_ShouldUseChatPrefixes));
 }
 
 
@@ -1857,7 +1800,7 @@ void cProtocol172::HandlePacketStatusRequest(cByteBuffer & a_ByteBuffer)
 
 	// Version:
 	Json::Value Version;
-	Version["name"] = "MCServer 1.7.2";
+	Version["name"] = "Cuberite 1.7.2";
 	Version["protocol"] = 4;
 
 	// Players:
@@ -2451,7 +2394,7 @@ void cProtocol172::HandleVanillaPluginMessage(cByteBuffer & a_ByteBuffer, const 
 		}
 		
 		// Send back our brand:
-		SendPluginMessage("MC|Brand", "MCServer");
+		SendPluginMessage("MC|Brand", "Cuberite");
 		return;
 	}
 	else if (a_Channel == "MC|Beacon")
@@ -3313,7 +3256,7 @@ void cProtocol176::HandlePacketStatusRequest(cByteBuffer & a_ByteBuffer)
 
 	// Version:
 	Json::Value Version;
-	Version["name"] = "MCServer 1.7.6";
+	Version["name"] = "Cuberite 1.7.6";
 	Version["protocol"] = 5;
 
 	// Players:

@@ -95,7 +95,7 @@ cClientHandle::cClientHandle(const AString & a_IPString, int a_ViewDistance) :
 	m_UniqueID = s_ClientCount;
 	m_PingStartTime = std::chrono::steady_clock::now();
 
-	LOGD("New ClientHandle created at %p", this);
+	LOGD("New ClientHandle created at %p", static_cast<void *>(this));
 }
 
 
@@ -106,7 +106,7 @@ cClientHandle::~cClientHandle()
 {
 	ASSERT(m_State == csDestroyed);  // Has Destroy() been called?
 	
-	LOGD("Deleting client \"%s\" at %p", GetUsername().c_str(), this);
+	LOGD("Deleting client \"%s\" at %p", GetUsername().c_str(), static_cast<void *>(this));
 
 	{
 		cCSLock Lock(m_CSChunkLists);
@@ -140,7 +140,7 @@ cClientHandle::~cClientHandle()
 	delete m_Protocol;
 	m_Protocol = nullptr;
 	
-	LOGD("ClientHandle at %p deleted", this);
+	LOGD("ClientHandle at %p deleted", static_cast<void *>(this));
 }
 
 
@@ -164,7 +164,7 @@ void cClientHandle::Destroy(void)
 	}
 	
 	// DEBUG:
-	LOGD("%s: client %p, \"%s\"", __FUNCTION__, this, m_Username.c_str());
+	LOGD("%s: client %p, \"%s\"", __FUNCTION__, static_cast<void *>(this), m_Username.c_str());
 	
 	if ((m_Player != nullptr) && (m_Player->GetWorld() != nullptr))
 	{
@@ -2086,8 +2086,9 @@ void cClientHandle::SendChat(const AString & a_Message, eMessageType a_ChatPrefi
 		}
 	}
 
-	AString Message = FormatMessageType(World->ShouldUseChatPrefixes(), a_ChatPrefix, a_AdditionalData);
-	m_Protocol->SendChat(Message.append(a_Message));
+	bool ShouldUsePrefixes = World->ShouldUseChatPrefixes();
+	AString Message = FormatMessageType(ShouldUsePrefixes, a_ChatPrefix, a_AdditionalData);
+	m_Protocol->SendChat(Message.append(a_Message), ctChatBox, ShouldUsePrefixes);
 }
 
 
@@ -2096,7 +2097,7 @@ void cClientHandle::SendChat(const AString & a_Message, eMessageType a_ChatPrefi
 
 void cClientHandle::SendChat(const cCompositeChat & a_Message)
 {
-	m_Protocol->SendChat(a_Message);
+	m_Protocol->SendChat(a_Message, ctChatBox, GetPlayer()->GetWorld()->ShouldUseChatPrefixes());
 }
 
 
@@ -2116,7 +2117,7 @@ void cClientHandle::SendChatAboveActionBar(const AString & a_Message, eMessageTy
 	}
 
 	AString Message = FormatMessageType(World->ShouldUseChatPrefixes(), a_ChatPrefix, a_AdditionalData);
-	m_Protocol->SendChatAboveActionBar(Message.append(a_Message));
+	m_Protocol->SendChat(Message.append(a_Message), ctAboveActionBar);
 }
 
 
@@ -2125,7 +2126,7 @@ void cClientHandle::SendChatAboveActionBar(const AString & a_Message, eMessageTy
 
 void cClientHandle::SendChatAboveActionBar(const cCompositeChat & a_Message)
 {
-	m_Protocol->SendChatAboveActionBar(a_Message);
+	m_Protocol->SendChat(a_Message, ctAboveActionBar, GetPlayer()->GetWorld()->ShouldUseChatPrefixes());
 }
 
 
@@ -2144,8 +2145,9 @@ void cClientHandle::SendChatSystem(const AString & a_Message, eMessageType a_Cha
 		}
 	}
 
-	AString Message = FormatMessageType(World->ShouldUseChatPrefixes(), a_ChatPrefix, a_AdditionalData);
-	m_Protocol->SendChatSystem(Message.append(a_Message));
+	auto ShouldUsePrefixes = World->ShouldUseChatPrefixes();
+	AString Message = FormatMessageType(ShouldUsePrefixes, a_ChatPrefix, a_AdditionalData);
+	m_Protocol->SendChat(Message.append(a_Message), ctSystem, ShouldUsePrefixes);
 }
 
 
@@ -2154,7 +2156,7 @@ void cClientHandle::SendChatSystem(const AString & a_Message, eMessageType a_Cha
 
 void cClientHandle::SendChatSystem(const cCompositeChat & a_Message)
 {
-	m_Protocol->SendChatSystem(a_Message);
+	m_Protocol->SendChat(a_Message, ctSystem, GetPlayer()->GetWorld()->ShouldUseChatPrefixes());
 }
 
 
@@ -2933,7 +2935,7 @@ void cClientHandle::AddWantedChunk(int a_ChunkX, int a_ChunkZ)
 		return;
 	}
 	
-	LOGD("Adding chunk [%d, %d] to wanted chunks for client %p", a_ChunkX, a_ChunkZ, this);
+	LOGD("Adding chunk [%d, %d] to wanted chunks for client %p", a_ChunkX, a_ChunkZ, static_cast<void *>(this));
 	cCSLock Lock(m_CSChunkLists);
 	if (m_ChunksToSend.find(cChunkCoords(a_ChunkX, a_ChunkZ)) == m_ChunksToSend.end())
 	{
