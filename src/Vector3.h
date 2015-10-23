@@ -393,11 +393,9 @@ public:
 	{
 		// Guaranteed to have no hash collisions for any 128x128x128 area
 		size_t Hash = 0;
-		Hash ^= static_cast<size_t>(a_Vector.x);
-		Hash <<= 8;
-		Hash ^= static_cast<size_t>(a_Vector.y);
-		Hash <<= 8;
-		Hash ^= static_cast<size_t>(a_Vector.z);
+		Hash ^= a_Vector.x + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+		Hash ^= a_Vector.y + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+		Hash ^= a_Vector.z + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
 		return Hash;
 	}
 };
