@@ -2,7 +2,7 @@ build/
 nbproject/
 ipch/
 Win32/
-MCServer
+Cuberite
 Server/Cuberite
 Server/buildinfo
 Server/CONTRIBUTORS
@@ -100,4 +100,3 @@ ReleaseProfile/
 Server/cuberite_api.lua
 Server/official_undocumented.lua
 Server/NewlyUndocumented.lua
-
