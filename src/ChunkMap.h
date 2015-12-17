@@ -398,7 +398,7 @@ public:
 	void QueueTickBlock(int a_BlockX, int a_BlockY, int a_BlockZ);
 	
 	/** Returns the CS for locking the chunkmap; only cWorld::cLock may use this function! */
-	cCriticalSection & GetCS(void) { return m_CSChunks; }
+	cCriticalSection & GetCS(void) { return m_CSLayers; }
 	
 	/** Increments (a_AlwaysTicked == true) or decrements (false) the m_AlwaysTicked counter for the specified chunk.
 	If the m_AlwaysTicked counter is greater than zero, the chunk is ticked in the tick-thread regardless of
@@ -445,7 +445,7 @@ private:
 	
 	typedef std::list<cChunkStay *> cChunkStays;
 
-	cCriticalSection m_CSChunks;
+	cCriticalSection m_CSLayers;
 
 	/** A map of chunk coordinates to chunk pointers
 	Uses a map (as opposed to unordered_map) because sorted maps are apparently faster */
