@@ -1,14 +1,19 @@
-//
-// Created by sphinxc0re on 12/23/15.
-//
 
-#ifndef CUBERITE_CVILLAGERFARMER_H
-#define CUBERITE_CVILLAGERFARMER_H
+#pragma once
+
+#include "Villager.h"
+
+class cVillagerFarmer :
+    public cVillager
+{
+    typedef cVillager super;
+
+public:
+
+    cVillagerFarmer();
+
+    CLASS_PROTODEF(cVillagerFarmer)
 
 
-class cVillagerFarmer {
 
 };
-
-
-#endif //CUBERITE_CVILLAGERFARMER_H
