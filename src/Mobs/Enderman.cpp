@@ -4,7 +4,7 @@
 #include "Enderman.h"
 #include "../Entities/Player.h"
 #include "../Tracer.h"
-
+#include "Chunk.h"
 
 
 
@@ -200,4 +200,100 @@ void cEnderman::Tick(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
 		// TODO teleport to a safe location
 	}
 
+}
+
+
+void cEnderman::InStateIdle(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
+{
+    if (m_PathfinderActivated)
+    {
+        return;  // Still getting there
+    }
+
+    if (m_IdleInterval > std::chrono::seconds(1)) //been idle for a sec
+    {
+        int rem = m_World->GetTickRandomNumber(9);
+        if (rem == 9) //10% chance
+        {
+            BlockPickingLogic(a_Chunk);
+        }
+    }
+    super::InStateIdle(a_Dt, a_Chunk);//do other idle stuff
+}
+
+void cEnderman::BlockPickingLogic(cChunk & a_Chunk)
+{
+    bool placing = (CarriedBlock != E_BLOCK_AIR);
+
+    Vector3d Dist;
+    if (placing)
+    {
+        //Endermen place blocks to 2x2 region (and 2 height) centered around them.
+        Dist.x = static_cast<double>(m_World->GetTickRandomNumber(2)) - 1.0;
+        Dist.z = static_cast<double>(m_World->GetTickRandomNumber(2)) - 1.0;
+        Dist.y = static_cast<double>(m_World->GetTickRandomNumber(2));
+    }
+    else
+    {
+        //Endermen take blocks from 4x4 region (and 3 height) centered around them.
+        Dist.x = static_cast<double>(m_World->GetTickRandomNumber(4)) - 2.0;
+        Dist.z = static_cast<double>(m_World->GetTickRandomNumber(4)) - 2.0;
+        Dist.y = static_cast<double>(m_World->GetTickRandomNumber(3));
+    }
+    Vector3d Destination(GetPosX() + Dist.x, GetPosY() + Dist.y, GetPosZ() + Dist.z);
+
+    cChunk * Chunk = a_Chunk.GetNeighborChunk(static_cast<int>(Destination.x), static_cast<int>(Destination.z));
+    if ((Chunk == nullptr) || !Chunk->IsValid())
+    {
+        return;
+    }
+
+    BLOCKTYPE BlockType;
+    NIBBLETYPE BlockMeta;
+    int RelX = static_cast<int>(Destination.x) - Chunk->GetPosX() * cChunkDef::Width;
+    int RelZ = static_cast<int>(Destination.z) - Chunk->GetPosZ() * cChunkDef::Width;
+    Chunk->GetBlockTypeMeta(RelX, static_cast<int>(Destination.y), RelZ, BlockType, BlockMeta);
+    if (placing)
+    {
+        BLOCKTYPE FloorType;
+        NIBBLETYPE FloorMeta;
+        Chunk->GetBlockTypeMeta(RelX, static_cast<int>(Destination.y) - 1, RelZ, FloorType, FloorMeta);
+        //CALLBACK HERE
+        if (BlockType == E_BLOCK_AIR && FloorType!=E_BLOCK_AIR)
+        {
+            //TODO: check if he(it?) can place it. E.g. can place flower on this block?
+            m_World->SetBlock(Destination.x, Destination.y, Destination.z, CarriedBlock, CarriedMeta);
+
+            SetCarriedBlock(E_BLOCK_AIR);
+            SetCarriedMeta(0);
+            GetWorld()->BroadcastEntityMetadata(*this); //display that we picked up a block
+            //CALLBACK HERE
+        }
+    }
+    else
+    {
+        //CALLBACK HERE
+        //check if block is whitelisted
+        if (BlockType != E_BLOCK_FLOWER &&
+            BlockType != E_BLOCK_CACTUS &&
+            BlockType != E_BLOCK_CLAY &&
+            BlockType != E_BLOCK_DIRT &&
+            BlockType != E_BLOCK_MELON &&
+            BlockType != E_BLOCK_PUMPKIN &&
+            BlockType != E_BLOCK_MYCELIUM &&
+            BlockType != E_BLOCK_RED_MUSHROOM &&
+            BlockType != E_BLOCK_BROWN_MUSHROOM &&
+            BlockType != E_BLOCK_SAND &&
+            BlockType != E_BLOCK_TNT)
+        {
+            //CALLBACK HERE
+            //pick it up
+            SetCarriedBlock(BlockType);
+            SetCarriedMeta(BlockMeta);
+            GetWorld()->BroadcastEntityMetadata(*this); //display that we picked up a block
+
+            m_World->DigBlock(Destination.x, Destination.y, Destination.z);//NOTE(warmist): Should probably use the chunk function but there is none, and we dont want to dublicate code, do we?
+            //CALLBACK HERE
+        }
+    }
 }
